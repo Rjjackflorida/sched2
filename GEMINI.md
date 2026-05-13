@@ -6,6 +6,7 @@ This file provides foundational context and instructions for AI agents working o
 - **Visual Integrity:** Maintain the teal-themed, clean UI based on Shadcn UI.
 - **Conflict Prevention:** Respect the database constraints in `prisma/schema.prisma` that prevent double-booking of faculty and rooms.
 - **Portal Separation:** Ensure features are correctly placed in either the Admin Portal or the Faculty Portal.
+- **Readable Code:** Every new block of code or logical section MUST include descriptive comments. This is essential for long-term readability, easier debugging, and providing context for future updates.
 
 ## Tech Stack
 - **Framework:** Next.js 14+ (App Router)

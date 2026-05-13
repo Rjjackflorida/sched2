@@ -30,10 +30,6 @@ export default function FacultyLayout({ children }) {
       <aside className="w-[250px] bg-white border-r border-slate-200 flex flex-col hidden md:flex shrink-0">
         <div className="p-4 border-b border-slate-200">
           <div className="flex items-center gap-3">
-            <Avatar>
-              <AvatarImage src="/faculty-avatar.jpg" alt="Faculty" />
-              <AvatarFallback>FP</AvatarFallback>
-            </Avatar>
             <div>
               <p className="text-sm font-semibold text-slate-900">Dr. Faculty Member</p>
               <p className="text-xs text-slate-500">Faculty Portal</p>

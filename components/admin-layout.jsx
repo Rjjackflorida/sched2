@@ -14,6 +14,7 @@ import {
   Bell,
   Settings,
   UserCog,
+  Building2,
 } from "lucide-react"
 import {
   DropdownMenu,
@@ -26,29 +27,33 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { logout } from "@/app/actions/auth"
 
+/**
+ * AdminLayout provides the persistent navigation sidebar and top header 
+ * for all administrative pages.
+ */
 export function AdminLayout({ children, title }) {
   const pathname = usePathname()
 
+  /**
+   * Defines the primary navigation links for the Admin Portal.
+   */
   const navItems = [
     { name: "Dashboard", href: "/", icon: LayoutDashboard },
     { name: "Faculty Management", href: "/faculty-management", icon: Users },
     { name: "User Management", href: "/user-management", icon: UserCog },
+    { name: "Department Management", href: "/department-management", icon: Building2 },
     { name: "Schedule Builder", href: "/schedule-builder", icon: Calendar },
     { name: "Resource Management", href: "/resource-management", icon: Layers },
     { name: "Reports & Exports", href: "/reports", icon: FileText },
-    
   ]
 
   return (
     <div className="flex h-screen bg-slate-50 w-full overflow-hidden">
-      {/* Sidebar */}
+      {/* Sidebar Navigation */}
       <aside className="w-[250px] bg-white border-r border-slate-200 flex flex-col hidden md:flex shrink-0">
+        {/* Sidebar Header: Brand/User Info */}
         <div className="p-4 border-b border-slate-200">
           <div className="flex items-center gap-3">
-            <Avatar>
-              <AvatarImage src="/avatar.jpg" alt="Admin" />
-              <AvatarFallback>AA</AvatarFallback>
-            </Avatar>
             <div>
               <p className="text-sm font-semibold text-slate-900">Academic Admin</p>
               <p className="text-xs text-slate-500">Scheduling Portal</p>
@@ -56,6 +61,7 @@ export function AdminLayout({ children, title }) {
           </div>
         </div>
 
+        {/* Main Navigation Links */}
         <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
           {navItems.map((item) => {
             const isActive = pathname === item.href
@@ -76,6 +82,7 @@ export function AdminLayout({ children, title }) {
           })}
         </nav>
 
+        {/* Sidebar Footer: Quick Actions/Help */}
         <div className="p-4 border-t border-slate-200 space-y-4">
           <Button className="w-full bg-[#115e59] hover:bg-teal-900 text-white">
             Create New Schedule
@@ -87,9 +94,9 @@ export function AdminLayout({ children, title }) {
         </div>
       </aside>
 
-      {/* Main Content */}
+      {/* Main Content Area */}
       <main className="flex-1 flex flex-col h-full overflow-hidden">
-        {/* Top Nav */}
+        {/* Top Navigation Bar */}
         <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6 shrink-0">
           <h1 className="text-xl font-bold text-teal-700">{title || "Scheduling Portal"}</h1>
           <div className="flex items-center gap-4">
@@ -126,7 +133,7 @@ export function AdminLayout({ children, title }) {
           </div>
         </header>
 
-        {/* Scrollable Main Area / Workspace */}
+        {/* Dynamic Page Content */}
         {children}
       </main>
     </div>
