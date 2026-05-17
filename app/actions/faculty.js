@@ -87,3 +87,34 @@ export async function updateFacultyProfile(userId, data) {
   }
 }
 
+/**
+ * Deletes a faculty profile. 
+ * Note: This deletes the profile metadata but keeps the User account.
+ * Will fail if the faculty is assigned to active schedule sections.
+ */
+export async function deleteFacultyProfile(userId) {
+  try {
+    const profile = await prisma.facultyProfile.findUnique({
+      where: { userId },
+      include: { _count: { select: { sections: true } } }
+    });
+
+    if (profile && profile._count.sections > 0) {
+      return { 
+        success: false, 
+        error: `Cannot delete profile. This faculty member has ${profile._count.sections} active class section(s) assigned.` 
+      };
+    }
+
+    // Delete the profile
+    await prisma.facultyProfile.delete({
+      where: { userId }
+    });
+
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to delete faculty profile:", error);
+    return { success: false, error: "Failed to delete profile from database." };
+  }
+}
+

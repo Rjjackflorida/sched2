@@ -39,11 +39,10 @@ export function AdminLayout({ children, title }) {
    */
   const navItems = [
     { name: "Dashboard", href: "/", icon: LayoutDashboard },
-    { name: "Faculty Management", href: "/faculty-management", icon: Users },
+    { name: "Resource Management", href: "/resource-management", icon: Layers },
     { name: "User Management", href: "/user-management", icon: UserCog },
     { name: "Department Management", href: "/department-management", icon: Building2 },
     { name: "Schedule Builder", href: "/schedule-builder", icon: Calendar },
-    { name: "Resource Management", href: "/resource-management", icon: Layers },
     { name: "Reports & Exports", href: "/reports", icon: FileText },
   ]
 

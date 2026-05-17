@@ -215,14 +215,16 @@ export default function FacultyManagementPage() {
 
                             {/* Employment Type Column */}
                             <td className="px-6 py-4">
-                              <span className={member.employmentType === "not assigned yet" ? "text-slate-400 italic" : "text-slate-700 font-medium capitalize"}>
-                                {member.employmentType.replace('_', ' ')}
+                              <span className={member.employmentType === "not assigned yet" || !member.employmentType ? "text-slate-400 italic" : "text-slate-700 font-medium capitalize"}>
+                                {member.employmentType && member.employmentType !== "not assigned yet" 
+                                  ? member.employmentType.replace('_', ' ') 
+                                  : "not assigned yet"}
                               </span>
                             </td>
 
                             {/* Workload Column */}
                             <td className="px-6 py-4">
-                              {hasWorkloadLimit ? (
+                              {member.workload && member.workload.max !== null ? (
                                 <div className="flex flex-col gap-1">
                                   <div className="flex items-center justify-between text-[10px]">
                                     <span className={isOverload ? "text-red-600 font-bold" : "text-slate-500"}>

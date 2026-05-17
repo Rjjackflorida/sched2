@@ -113,15 +113,17 @@ model FacultyAvailability {
  * Room model representing physical classrooms or labs.
  */
 model Room {
-  id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name      String
-  building  String?
-  capacity  Int?
-  type      String?
-  isActive  Boolean   @default(true) @map("is_active")
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name        String
+  roomNumber  String?   @map("room_number")
+  building    String?
+  capacity    Int?
+  type        String?
+  isActive    Boolean   @default(true) @map("is_active")
 
-  sections  CourseSection[]
+  sections    CourseSection[]
 
+  @@unique([building, roomNumber])
   @@map("rooms")
 }
 
