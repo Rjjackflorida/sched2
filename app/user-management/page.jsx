@@ -13,8 +13,9 @@ import {
   Plus,
   Loader2,
   AlertCircle,
+  Trash2,
 } from "lucide-react"
-import { getUsers, createUser, updateUser, toggleUserStatus } from "@/app/actions/user"
+import { getUsers, createUser, updateUser, toggleUserStatus, deleteUser } from "@/app/actions/user"
 
 export default function UserManagementPage() {
   const [users, setUsers] = useState([]);
@@ -39,6 +40,9 @@ export default function UserManagementPage() {
 
   // Toggle Confirmation State
   const [toggleTarget, setToggleTarget] = useState(null); // User object targeted for status toggle
+
+  // Delete Confirmation State
+  const [deleteTarget, setDeleteTarget] = useState(null); // User object targeted for deletion
 
   // Load users from DB
   const loadUsers = async () => {
@@ -109,6 +113,26 @@ export default function UserManagementPage() {
     setToggleTarget(null);
   };
 
+  // Handle Delete button click (shows confirmation)
+  const handleDeleteClick = (user) => {
+    setDeleteTarget(user);
+  };
+
+  /**
+   * Executes the deletion after user confirms.
+   * Removes user from DB and local state.
+   */
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
+
+    const res = await deleteUser(deleteTarget.id);
+    if (res?.success) {
+      // Remove from local list to reflect changes immediately
+      setUsers(prev => prev.filter(u => u.id !== deleteTarget.id));
+    }
+    setDeleteTarget(null);
+  };
+
   // Handle user form submission (Add or Update)
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -116,17 +140,25 @@ export default function UserManagementPage() {
     setFormError(null);
     setFormSuccess(false);
 
-    // 1. Password Validation
-    if (formData.password !== formData.confirmPassword) {
+    /**
+     * Prepare data for submission.
+     * For new users, we automatically assign the default password '12345678'.
+     */
+    const submissionData = { ...formData };
+    if (!editingUser) {
+      submissionData.password = "12345678";
+      submissionData.confirmPassword = "12345678";
+    }
+
+    // 1. Password Validation (Checks for match and length)
+    if (submissionData.password !== submissionData.confirmPassword) {
       setFormError("Passwords do not match.");
       setIsSubmitting(false);
       return;
     }
 
     // 2. Minimum Length Validation (8 characters)
-    // - Always required for new users
-    // - Required for existing users only if they are attempting to change it
-    if (formData.password && formData.password.length < 8) {
+    if (submissionData.password && submissionData.password.length < 8) {
       setFormError("Password must be at least 8 characters long.");
       setIsSubmitting(false);
       return;
@@ -135,18 +167,12 @@ export default function UserManagementPage() {
     // 3. Determine Action (Create vs Update)
     let res;
     if (editingUser) {
-      res = await updateUser(editingUser.id, formData);
+      res = await updateUser(editingUser.id, submissionData);
     } else {
-      // For new users, password is required
-      if (!formData.password) {
-        setFormError("Password is required for new users.");
-        setIsSubmitting(false);
-        return;
-      }
-      res = await createUser(formData);
+      res = await createUser(submissionData);
     }
 
-    // 3. Handle Result
+    // 4. Handle Result and Update Local State
     if (res?.success) {
       setFormSuccess(true);
       
@@ -154,15 +180,18 @@ export default function UserManagementPage() {
         // Update user in local state list
         setUsers((prev) => prev.map(u => u.id === res.user.id ? res.user : u));
       } else {
-        // Prepend newly created user
+        // Prepend newly created user to local list
         setUsers((prev) => [res.user, ...prev]);
       }
 
-      // Close modal after a brief delay
+      /**
+       * Close modal after a delay to allow the admin to read the success message
+       * and the note about the default password.
+       */
       setTimeout(() => {
         setIsModalOpen(false);
         setIsSubmitting(false);
-      }, 700);
+      }, 2500); 
     } else {
       setFormError(res?.error || "An error occurred while saving the user.");
       setIsSubmitting(false);
@@ -300,6 +329,14 @@ export default function UserManagementPage() {
                               >
                                 {user.isActive ? <ToggleRight className="h-5 w-5" /> : <ToggleLeft className="h-5 w-5" />}
                               </Button>
+                              <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                className="h-8 w-8 text-slate-400 hover:text-red-600 transition-colors"
+                                onClick={() => handleDeleteClick(user)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
                             </div>
                           </td>
                         </tr>
@@ -339,7 +376,9 @@ export default function UserManagementPage() {
               )}
               {formSuccess && (
                 <div className="p-3 bg-teal-50 border border-teal-100 rounded-md text-sm text-teal-700 font-medium">
-                  {editingUser ? "User successfully updated!" : "User successfully created!"}
+                  {editingUser 
+                    ? "User successfully updated!" 
+                    : "User successfully created! Default password: 12345678"}
                 </div>
               )}
 
@@ -392,33 +431,34 @@ export default function UserManagementPage() {
                 </select>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <label className="text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                    {editingUser ? "New Password" : "Password"}
-                  </label>
-                  <input
-                    type="password"
-                    required={!editingUser}
-                    value={formData.password}
-                    onChange={(e) => setFormData({...formData, password: e.target.value})}
-                    placeholder="••••••••"
-                    className="w-full px-3 py-2 bg-white border border-slate-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
-                  />
-                  {editingUser && <p className="text-[10px] text-slate-400 italic">Leave blank to keep current</p>}
+              {/* Password fields are only shown during Edit mode */}
+              {editingUser && (
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                      New Password
+                    </label>
+                    <input
+                      type="password"
+                      value={formData.password}
+                      onChange={(e) => setFormData({...formData, password: e.target.value})}
+                      placeholder="••••••••"
+                      className="w-full px-3 py-2 bg-white border border-slate-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    />
+                    <p className="text-[10px] text-slate-400 italic">Leave blank to keep current</p>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-slate-600 uppercase tracking-wider">Confirm Password</label>
+                    <input
+                      type="password"
+                      value={formData.confirmPassword}
+                      onChange={(e) => setFormData({...formData, confirmPassword: e.target.value})}
+                      placeholder="••••••••"
+                      className="w-full px-3 py-2 bg-white border border-slate-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    />
+                  </div>
                 </div>
-                <div className="space-y-1">
-                  <label className="text-xs font-semibold text-slate-600 uppercase tracking-wider">Confirm Password</label>
-                  <input
-                    type="password"
-                    required={!editingUser && formData.password !== ""}
-                    value={formData.confirmPassword}
-                    onChange={(e) => setFormData({...formData, confirmPassword: e.target.value})}
-                    placeholder="••••••••"
-                    className="w-full px-3 py-2 bg-white border border-slate-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
-                  />
-                </div>
-              </div>
+              )}
 
               <div className="pt-4 flex justify-end gap-3 border-t border-slate-100 mt-6">
                 <Button
@@ -481,6 +521,40 @@ export default function UserManagementPage() {
                     : "bg-[#115e59] hover:bg-teal-900 text-white px-6"}
                 >
                   Confirm
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Delete Confirmation Modal */}
+      {deleteTarget && (
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl border border-slate-200 w-full max-w-sm overflow-hidden animate-in fade-in-50 zoom-in-95 duration-150">
+            <div className="p-6 text-center">
+              {/* Warning Icon */}
+              <div className="mx-auto w-12 h-12 rounded-full bg-red-50 text-red-600 flex items-center justify-center mb-4">
+                <AlertCircle className="h-6 w-6" />
+              </div>
+              <h3 className="text-lg font-bold text-slate-900 mb-2">Delete User?</h3>
+              <p className="text-sm text-slate-500 mb-6">
+                Are you sure you want to delete <span className="font-semibold text-slate-700">{deleteTarget.fullName}</span>? This action cannot be undone and will remove all associated data.
+              </p>
+              
+              {/* Modal Actions */}
+              <div className="flex gap-3 justify-center">
+                <Button
+                  variant="outline"
+                  onClick={() => setDeleteTarget(null)}
+                  className="px-4 text-slate-600 border-slate-200 hover:bg-slate-50"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={confirmDelete}
+                  className="bg-red-600 hover:bg-red-700 text-white px-6"
+                >
+                  Delete User
                 </Button>
               </div>
             </div>

@@ -6,6 +6,9 @@ datasource db {
   provider = "postgresql"
 }
 
+/**
+ * User model for authentication and core profile data.
+ */
 model User {
   id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   email         String    @unique
@@ -22,14 +25,18 @@ model User {
   @@map("users")
 }
 
+/**
+ * Department model representing academic units.
+ * Uses a custom ID format: CODE + HHMM (Creation Time).
+ */
 model Department {
-  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id            String    @id @map("id")
   name          String
   code          String    @unique
-  college       String?
   headFacultyId String?   @db.Uuid @map("head_faculty_id")
   createdAt     DateTime  @default(now()) @map("created_at")
 
+  // Relationships
   headFaculty   FacultyProfile? @relation("DepartmentHead", fields: [headFacultyId], references: [id])
   courses       Course[]
   faculties     FacultyProfile[] @relation("DepartmentFaculty")
@@ -37,19 +44,23 @@ model Department {
   @@map("departments")
 }
 
+/**
+ * FacultyProfile extends the User model with academic-specific details.
+ */
 model FacultyProfile {
   id                String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   userId            String    @unique @db.Uuid @map("user_id")
-  departmentId      String    @db.Uuid @map("department_id")
+  departmentId      String?   @map("department_id") // Made nullable to allow initial user creation without department
   employeeId        String?   @unique @map("employee_id")
   designation       String?
-  employmentType    String?   @default("full_time") @map("employment_type")
-  maxUnitsPerSem    Int?      @default(18) @map("max_units_per_sem")
-  createdAt         DateTime  @default(now()) @map("created_at")
-  updatedAt         DateTime  @default(now()) @updatedAt @map("updated_at")
+  employmentType    String?    @map("employment_type")
+  maxUnitsPerSem    Int?       @map("max_units_per_sem")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @default(now()) @updatedAt @map("updated_at")
 
-  user              User      @relation(fields: [userId], references: [id])
-  department        Department @relation("DepartmentFaculty", fields: [departmentId], references: [id])
+  // Relationships
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  department        Department? @relation("DepartmentFaculty", fields: [departmentId], references: [id])
   headOfDepartment  Department[] @relation("DepartmentHead")
 
   availabilities    FacultyAvailability[]
@@ -58,21 +69,28 @@ model FacultyProfile {
   @@map("faculty_profiles")
 }
 
+/**
+ * Course model representing individual subjects offered.
+ */
 model Course {
   id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  departmentId  String    @db.Uuid @map("department_id")
+  departmentId  String    @map("department_id")
   code          String    @unique
   title         String
   units         Int
   description   String?
   createdAt     DateTime  @default(now()) @map("created_at")
 
+  // Relationships
   department    Department @relation(fields: [departmentId], references: [id])
   sections      CourseSection[]
 
   @@map("courses")
 }
 
+/**
+ * FacultyAvailability tracks when instructors are free to teach.
+ */
 model FacultyAvailability {
   id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   facultyId     String    @db.Uuid @map("faculty_id")
@@ -91,6 +109,9 @@ model FacultyAvailability {
   @@map("faculty_availability")
 }
 
+/**
+ * Room model representing physical classrooms or labs.
+ */
 model Room {
   id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   name      String
@@ -104,6 +125,9 @@ model Room {
   @@map("rooms")
 }
 
+/**
+ * CourseSection tracks specific instances of a course in a schedule.
+ */
 model CourseSection {
   id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   courseId      String    @db.Uuid @map("course_id")
