@@ -118,3 +118,131 @@ export async function deleteFacultyProfile(userId) {
   }
 }
 
+/**
+ * Saves or updates faculty availability.
+ * Implements block merging to reduce database rows.
+ */
+export async function saveFacultyAvailability(userId, { semester, academicYear, blocks }) {
+  try {
+    // 1. Find the faculty profile ID
+    const profile = await prisma.facultyProfile.findUnique({
+      where: { userId }
+    });
+
+    if (!profile) return { success: false, error: "Faculty profile not found." };
+
+    // 2. Group blocks by day
+    const dayGroups = {};
+    blocks.forEach(block => {
+      const [day, time] = block.split('-');
+      if (!dayGroups[day]) dayGroups[day] = [];
+      dayGroups[day].push(time);
+    });
+
+    // 3. Merging Algorithm: Convert individual 30-min slots into ranges
+    const finalRecords = [];
+    
+    Object.keys(dayGroups).forEach(day => {
+      // Sort times (e.g., "08:00", "08:30", "13:00")
+      const times = dayGroups[day].sort();
+      
+      let currentStart = null;
+      let lastTime = null;
+
+      times.forEach((time, index) => {
+        if (currentStart === null) {
+          currentStart = time;
+        }
+
+        const [h, m] = time.split(':').map(Number);
+        // Calculate the end time of THIS block (30 mins later)
+        let nextM = m + 30;
+        let nextH = h;
+        if (nextM === 60) { nextH += 1; nextM = 0; }
+        const currentBlockEnd = `${String(nextH).padStart(2, '0')}:${String(nextM).padStart(2, '0')}`;
+
+        // Check if the NEXT selected time in the array matches currentBlockEnd
+        const nextSelectedTime = times[index + 1];
+        
+        if (nextSelectedTime !== currentBlockEnd) {
+          // Gap detected or end of array! Finalize this range.
+          // Ensure time strings are 2-digit padded for startTime
+          const [startH, startM] = currentStart.split(':');
+          const paddedStart = `${startH.padStart(2, '0')}:${startM.padStart(2, '0')}`;
+
+          finalRecords.push({
+            facultyId: profile.id,
+            semester,
+            academicYear: parseInt(academicYear, 10),
+            dayOfWeek: day,
+            startTime: new Date(`1970-01-01T${paddedStart}:00Z`), 
+            endTime: new Date(`1970-01-01T${currentBlockEnd}:00Z`),
+            status: "unavailable"
+          });
+          currentStart = null;
+        }
+      });
+    });
+
+    // 4. Transaction: Clear old records for this period and insert new ones
+    await prisma.$transaction([
+      prisma.facultyAvailability.deleteMany({
+        where: {
+          facultyId: profile.id,
+          semester,
+          academicYear: parseInt(academicYear, 10)
+        }
+      }),
+      prisma.facultyAvailability.createMany({
+        data: finalRecords
+      })
+    ]);
+
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to save availability:", error);
+    return { success: false, error: "Database error while saving availability." };
+  }
+}
+
+/**
+ * Fetches availability for a specific faculty, semester, and year.
+ */
+export async function getFacultyAvailability(userId, semester, academicYear) {
+  try {
+    const profile = await prisma.facultyProfile.findUnique({
+      where: { userId }
+    });
+
+    if (!profile) return { success: false, error: "Profile not found." };
+
+    const records = await prisma.facultyAvailability.findMany({
+      where: {
+        facultyId: profile.id,
+        semester,
+        academicYear: parseInt(academicYear, 10),
+        status: "unavailable"
+      }
+    });
+
+    // Convert ranges back into 30-min block keys for the UI
+    const blocks = [];
+    records.forEach(rec => {
+      let current = new Date(rec.startTime);
+      const end = new Date(rec.endTime);
+
+      while (current < end) {
+        const h = String(current.getUTCHours()).padStart(2, '0');
+        const m = String(current.getUTCMinutes()).padStart(2, '0');
+        blocks.push(`${rec.dayOfWeek}-${h}:${m}`);
+        current.setUTCMinutes(current.getUTCMinutes() + 30);
+      }
+    });
+
+    return { success: true, blocks };
+  } catch (error) {
+    console.error("Failed to fetch availability:", error);
+    return { success: false, error: "Failed to load availability." };
+  }
+}
+
