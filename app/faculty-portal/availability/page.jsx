@@ -5,12 +5,34 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 
 const daysOfWeek = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]
-const timeSlots = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18]
+
+// Generate 30-minute intervals from 7:00 AM to 9:00 PM
+const generateTimeSlots = () => {
+  const slots = []
+  for (let hour = 7; hour <= 21; hour++) {
+    slots.push(`${hour}:00`)
+    if (hour < 21) slots.push(`${hour}:30`)
+  }
+  return slots
+}
+
+const timeSlots = generateTimeSlots()
+
+/**
+ * Formats a 24h string (e.g. "13:30") into a 12h string (e.g. "1:30 PM")
+ */
+const format12Hour = (timeStr) => {
+  const [hourStr, minute] = timeStr.split(':')
+  const hour = parseInt(hourStr, 10)
+  const period = hour >= 12 ? 'PM' : 'AM'
+  const displayHour = hour % 12 || 12
+  return `${displayHour}:${minute} ${period}`
+}
 
 export default function FacultyAvailability() {
   const [isRecurring, setIsRecurring] = useState(true)
-  // Store unavailable slots: "Monday-9"
-  const [unavailableBlocks, setUnavailableBlocks] = useState(new Set(["Tuesday-9", "Tuesday-10", "Thursday-14"]))
+  // Store unavailable slots: "Monday-9:00"
+  const [unavailableBlocks, setUnavailableBlocks] = useState(new Set(["Tuesday-9:00", "Tuesday-10:00", "Thursday-14:30"]))
 
   const toggleBlock = (day, time) => {
     const key = `${day}-${time}`
@@ -19,6 +41,24 @@ export default function FacultyAvailability() {
       newBlocks.delete(key)
     } else {
       newBlocks.add(key)
+    }
+    setUnavailableBlocks(newBlocks)
+  }
+
+  /**
+   * Toggles an entire day between fully blocked and fully available.
+   */
+  const toggleDay = (day) => {
+    const daySlots = timeSlots.map(time => `${day}-${time}`)
+    const allBlocked = daySlots.every(slot => unavailableBlocks.has(slot))
+    
+    const newBlocks = new Set(unavailableBlocks)
+    if (allBlocked) {
+      // If everything is already blocked, clear the day
+      daySlots.forEach(slot => newBlocks.delete(slot))
+    } else {
+      // Otherwise, block the entire day
+      daySlots.forEach(slot => newBlocks.add(slot))
     }
     setUnavailableBlocks(newBlocks)
   }
@@ -59,19 +99,27 @@ export default function FacultyAvailability() {
         <CardContent className="p-0 overflow-x-auto">
           <div className="min-w-[800px]">
             {/* Header */}
-            <div className="grid grid-cols-6 border-b border-slate-200 bg-slate-50">
+            <div className="grid grid-cols-6 border-b border-slate-200 bg-slate-50 sticky top-0 z-10">
               <div className="p-3 border-r border-slate-200 text-center font-semibold text-slate-500 text-sm">Time</div>
               {daysOfWeek.map(day => (
-                <div key={day} className="p-3 border-r border-slate-200 text-center font-semibold text-slate-900 text-sm">{day}</div>
+                <div 
+                  key={day} 
+                  onClick={() => toggleDay(day)}
+                  className="p-3 border-r border-slate-200 text-center font-semibold text-slate-900 text-sm cursor-pointer hover:bg-slate-200 transition-colors group relative"
+                  title={`Click to toggle all ${day} slots`}
+                >
+                  {day}
+                  <div className="absolute inset-x-0 bottom-0 h-0.5 bg-teal-600 scale-x-0 group-hover:scale-x-100 transition-transform origin-center"></div>
+                </div>
               ))}
             </div>
 
             {/* Body */}
-            <div className="divide-y divide-slate-100 bg-white">
+            <div className="divide-y divide-slate-100 bg-white max-h-[600px] overflow-y-auto">
               {timeSlots.map(time => (
-                <div key={time} className="grid grid-cols-6 h-16">
-                  <div className="border-r border-slate-200 p-2 flex items-center justify-center text-xs font-medium text-slate-500 bg-slate-50">
-                    {time}:00 {time < 12 ? 'AM' : 'PM'}
+                <div key={time} className="grid grid-cols-6 h-12">
+                  <div className="border-r border-slate-200 p-2 flex items-center justify-center text-[10px] font-bold uppercase text-slate-500 bg-slate-50">
+                    {format12Hour(time)}
                   </div>
                   {daysOfWeek.map(day => {
                     const isBlocked = unavailableBlocks.has(`${day}-${time}`)
@@ -81,12 +129,12 @@ export default function FacultyAvailability() {
                         onClick={() => toggleBlock(day, time)}
                         className={`
                           border-r border-slate-200 cursor-pointer transition-all duration-200
-                          ${isBlocked ? 'bg-slate-200/80 diagonal-stripes border-slate-300' : 'bg-teal-50/30 hover:bg-teal-100'}
+                          ${isBlocked ? 'bg-slate-200/80 diagonal-stripes border-slate-300' : 'bg-teal-50/10 hover:bg-teal-100/50'}
                         `}
                       >
                         {isBlocked && (
                           <div className="h-full w-full flex items-center justify-center">
-                            <Badge variant="secondary" className="bg-white/90 text-slate-600 border border-slate-200 pointer-events-none">Blocked</Badge>
+                            <Badge variant="secondary" className="bg-white/90 text-slate-600 border border-slate-200 pointer-events-none scale-75">Blocked</Badge>
                           </div>
                         )}
                       </div>
