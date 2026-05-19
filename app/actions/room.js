@@ -103,13 +103,13 @@ export async function deleteRoom(id) {
   try {
     const room = await prisma.room.findUnique({
       where: { id },
-      include: { _count: { select: { sections: true } } }
+      include: { _count: { select: { schedules: true } } }
     });
 
-    if (room && room._count.sections > 0) {
+    if (room && room._count.schedules > 0) {
       return { 
         success: false, 
-        error: `Cannot delete room. It has ${room._count.sections} section(s) scheduled in it.` 
+        error: `Cannot delete room. It has ${room._count.schedules} section(s) scheduled in it.` 
       };
     }
 

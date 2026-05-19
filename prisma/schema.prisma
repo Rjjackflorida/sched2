@@ -121,26 +121,23 @@ model Room {
   type        String?
   isActive    Boolean   @default(true) @map("is_active")
 
-  sections    CourseSection[]
+  schedules   SectionSchedule[]
 
   @@unique([building, roomNumber])
   @@map("rooms")
 }
 
 /**
- * CourseSection tracks specific instances of a course in a schedule.
+ * CourseSection tracks specific instances of a course.
  */
 model CourseSection {
   id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   courseId      String    @db.Uuid @map("course_id")
   facultyId     String?   @db.Uuid @map("faculty_id")
-  roomId        String?   @db.Uuid @map("room_id")
+  program       String
   sectionCode   String    @map("section_code")
   semester      String
   academicYear  Int       @map("academic_year")
-  dayOfWeek     String    @map("day_of_week")
-  startTime     DateTime? @db.Time() @map("start_time")
-  endTime       DateTime? @db.Time() @map("end_time")
   maxStudents   Int?      @map("max_students")
   status        String?   @default("open")
   createdAt     DateTime  @default(now()) @map("created_at")
@@ -148,10 +145,28 @@ model CourseSection {
 
   course        Course    @relation(fields: [courseId], references: [id])
   faculty       FacultyProfile? @relation(fields: [facultyId], references: [id])
-  room          Room?     @relation(fields: [roomId], references: [id])
+  schedules     SectionSchedule[]
 
-  @@unique([courseId, sectionCode, semester, academicYear])
-  @@unique([facultyId, dayOfWeek, startTime, endTime, semester, academicYear])
-  @@unique([roomId, dayOfWeek, startTime, endTime, semester, academicYear])
+  @@unique([courseId, program, sectionCode, semester, academicYear])
   @@map("course_sections")
+}
+
+/**
+ * SectionSchedule tracks specific meeting times and locations for a CourseSection.
+ */
+model SectionSchedule {
+  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  sectionId     String    @db.Uuid @map("section_id")
+  roomId        String?   @db.Uuid @map("room_id")
+  dayOfWeek     String    @map("day_of_week")
+  startTime     DateTime  @db.Time() @map("start_time")
+  endTime       DateTime  @db.Time() @map("end_time")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @default(now()) @updatedAt @map("updated_at")
+
+  section       CourseSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  room          Room?         @relation(fields: [roomId], references: [id])
+
+  @@unique([sectionId, dayOfWeek, startTime, endTime])
+  @@map("section_schedules")
 }
