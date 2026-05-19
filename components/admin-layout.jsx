@@ -41,7 +41,6 @@ export function AdminLayout({ children, title }) {
     { name: "Dashboard", href: "/", icon: LayoutDashboard },
     { name: "Resource Management", href: "/resource-management", icon: Layers },
     { name: "User Management", href: "/user-management", icon: UserCog },
-    { name: "Department Management", href: "/department-management", icon: Building2 },
     { name: "Schedule Builder", href: "/schedule-builder", icon: Calendar },
     { name: "Reports & Exports", href: "/reports", icon: FileText },
   ]
