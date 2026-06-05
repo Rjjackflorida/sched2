@@ -419,48 +419,51 @@ export default function ScheduleBuilderPage() {
 
       {/* Unified Action Modal (Room & Edit) */}
       {(isRoomModalOpen || isEditModalOpen) && (
-        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-xl flex items-center justify-center z-[100] p-4 animate-in fade-in duration-300">
-           <Card className="w-full max-w-xl shadow-[0_0_80px_rgba(0,0,0,0.3)] border-slate-200 overflow-hidden animate-in zoom-in-95 duration-500 rounded-[3rem]">
-             <div className="bg-slate-50 p-8 border-b border-slate-100 flex justify-between items-center">
-                <div className="flex items-center gap-4"><div className="bg-[#115e59] p-3 rounded-2xl shadow-xl shadow-teal-900/20"><Info className="h-6 w-6 text-white" /></div><h3 className="font-black text-2xl text-slate-900 tracking-tight">{isEditModalOpen ? "Manage Schedule" : "Finalize Assignment"}</h3></div>
-                <button onClick={() => { setIsRoomModalOpen(false); setIsEditModalOpen(false); setDraggedItem(null); setSelectedScheduleForEdit(null); setFormError(null); }} className="p-3 hover:bg-slate-200 rounded-full transition-all active:scale-90"><X className="h-6 w-6 text-slate-400" /></button>
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center z-[100] p-4 animate-in fade-in duration-200">
+           <Card className="w-full max-w-lg shadow-2xl border-0 overflow-hidden animate-in zoom-in-95 duration-200 rounded-3xl">
+             <div className="bg-slate-50 p-6 border-b border-slate-100 flex justify-between items-center">
+                <div className="flex items-center gap-3"><div className="bg-[#115e59] p-2.5 rounded-xl shadow-md"><Info className="h-5 w-5 text-white" /></div><h3 className="font-bold text-xl text-slate-900">{isEditModalOpen ? "Manage Schedule" : "Finalize Assignment"}</h3></div>
+                <button onClick={() => { setIsRoomModalOpen(false); setIsEditModalOpen(false); setDraggedItem(null); setSelectedScheduleForEdit(null); setFormError(null); }} className="p-2 hover:bg-slate-200 rounded-full transition-all"><X className="h-5 w-5 text-slate-400" /></button>
              </div>
-             <div className="p-8">
-                <div className="mb-10 p-8 bg-teal-50 rounded-[2rem] border border-teal-100 relative overflow-hidden group/target">
-                  <div className="absolute top-0 right-0 -mr-6 -mt-6 opacity-5 group-hover/target:scale-110 transition-transform duration-700"><BookOpen className="h-32 w-32" /></div>
-                  <p className="text-[10px] font-black text-teal-600 uppercase tracking-[0.3em] mb-3">Target Schedule Details</p>
-                  <h4 className="font-black text-slate-900 text-2xl leading-none mb-4">{isEditModalOpen ? selectedScheduleForEdit?.section.courseTitle : (draggedItem?.type === 'new' ? draggedItem.data.courseTitle : draggedItem?.data.section.course.title)}</h4>
-                  <div className="flex flex-wrap items-center gap-4 text-[10px] font-black uppercase tracking-widest">
-                    <span className="bg-[#115e59] text-white px-4 py-1.5 rounded-xl shadow-lg">{isEditModalOpen ? `${selectedScheduleForEdit?.section.section.program.code} ${selectedScheduleForEdit?.section.section.yearLevel}-${selectedScheduleForEdit?.section.section.name}` : (draggedItem?.type === 'new' ? `${draggedItem.data.programCode} ${draggedItem.data.sectionCode}` : `${draggedItem.data.section.section.program.code} ${draggedItem.data.section.section.yearLevel}-${draggedItem.data.section.section.name}`)}</span>
-                    <span className="flex items-center gap-2 text-slate-500 bg-white px-3 py-1.5 rounded-xl shadow-sm border border-slate-100"><CalendarIcon className="h-4 w-4 text-teal-600" /> {isEditModalOpen ? selectedScheduleForEdit?.dayOfWeek : pendingPlacement?.day}</span>
-                    <span className="flex items-center gap-2 text-slate-500 bg-white px-3 py-1.5 rounded-xl shadow-sm border border-slate-100"><Clock className="h-4 w-4 text-teal-600" /> {isEditModalOpen ? `${formatPrismaTime(selectedScheduleForEdit?.startTime)} - ${formatPrismaTime(selectedScheduleForEdit?.endTime)}` : `${pendingPlacement?.startTime} - ${pendingPlacement?.endTime}`}</span>
+             <div className="p-6">
+                <div className="mb-6 p-6 bg-teal-50 rounded-2xl border border-teal-100 relative overflow-hidden group/target">
+                  <div className="absolute top-0 right-0 -mr-4 -mt-4 opacity-5"><BookOpen className="h-24 w-24" /></div>
+                  <p className="text-[10px] font-semibold text-teal-600 uppercase tracking-widest mb-2">Target Schedule Details</p>
+                  <h4 className="font-bold text-slate-900 text-lg leading-tight mb-3">{isEditModalOpen ? selectedScheduleForEdit?.section.courseTitle : (draggedItem?.type === 'new' ? draggedItem.data.courseTitle : draggedItem?.data.section.course.title)}</h4>
+                  <div className="flex flex-wrap items-center gap-2 text-[10px] font-semibold uppercase tracking-wider">
+                    <span className="bg-[#115e59] text-white px-3 py-1 rounded-lg shadow-sm">{isEditModalOpen ? `${selectedScheduleForEdit?.section.section.program.code} ${selectedScheduleForEdit?.section.section.yearLevel}-${selectedScheduleForEdit?.section.section.name}` : (draggedItem?.type === 'new' ? `${draggedItem.data.programCode} ${draggedItem.data.sectionCode}` : `${draggedItem.data.section.section.program.code} ${draggedItem.data.section.section.yearLevel}-${draggedItem.data.section.section.name}`)}</span>
+                    <span className="flex items-center gap-1.5 text-slate-600 bg-white px-2 py-1 rounded-lg shadow-sm border border-slate-100"><CalendarIcon className="h-3 w-3 text-teal-600" /> {isEditModalOpen ? selectedScheduleForEdit?.dayOfWeek : pendingPlacement?.day}</span>
+                    <span className="flex items-center gap-1.5 text-slate-600 bg-white px-2 py-1 rounded-lg shadow-sm border border-slate-100"><Clock className="h-3 w-3 text-teal-600" /> {isEditModalOpen ? `${formatPrismaTime(selectedScheduleForEdit?.startTime)} - ${formatPrismaTime(selectedScheduleForEdit?.endTime)}` : `${pendingPlacement?.startTime} - ${pendingPlacement?.endTime}`}</span>
                   </div>
                 </div>
 
-                {formError && <div className="mb-8 p-5 bg-red-50 border-2 border-red-100 rounded-[1.5rem] text-[11px] font-black text-red-600 uppercase flex items-center gap-3 animate-bounce"><AlertCircle className="h-5 w-5" /> {formError}</div>}
+                {formError && <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-500 rounded-lg text-xs font-semibold text-red-700 flex items-center gap-2"><AlertCircle className="h-4 w-4" /> {formError}</div>}
                 
                 {isLoadingRooms ? (
-                  <div className="flex flex-col items-center justify-center py-20 gap-4"><Loader2 className="h-12 w-12 text-teal-600 animate-spin" /><p className="text-[11px] font-black text-slate-400 uppercase tracking-[0.3em]">Scanning Building Vacancies...</p></div>
+                  <div className="flex flex-col items-center justify-center py-12 gap-3"><Loader2 className="h-8 w-8 text-teal-600 animate-spin" /><p className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Scanning Building Vacancies...</p></div>
                 ) : (
-                  <div className="space-y-6">
+                  <div className="space-y-4">
                      <div className="flex justify-between items-center">
-                        <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Available Learning Spaces</p>
-                        <Badge className="bg-slate-100 text-slate-400 hover:bg-slate-100 border-none font-black text-[9px] uppercase">{availableRooms.length} Found</Badge>
+                        <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest">Available Learning Spaces</p>
+                        <Badge variant="secondary" className="bg-slate-100 text-slate-500 font-semibold text-[10px] uppercase">{availableRooms.length} Found</Badge>
                      </div>
-                     <div className="max-h-[300px] overflow-y-auto pr-3 space-y-3 custom-scrollbar">
+                     <div className="max-h-[250px] overflow-y-auto pr-2 space-y-2 custom-scrollbar">
                         {availableRooms.map(room => (
-                          <div key={room.id} onClick={() => !isSubmitting && room.isAvailable && (isEditModalOpen ? handleEditRoomSubmit(room.id) : handleSaveSchedule(room.id))} className={`p-5 rounded-[2rem] border-4 transition-all flex justify-between items-center group ${room.isAvailable ? 'border-slate-50 hover:border-teal-500 bg-white hover:bg-teal-50/50 cursor-pointer shadow-md hover:shadow-xl hover:-translate-y-0.5' : 'opacity-30 grayscale cursor-not-allowed border-transparent bg-slate-50'}`}>
-                             <div className="flex items-center gap-4">
-                                <div className={`p-3 rounded-2xl ${room.isAvailable ? 'bg-teal-50 text-teal-600 group-hover:bg-[#115e59] group-hover:text-white' : 'bg-slate-200 text-slate-400'} transition-all shadow-inner`}><MapPin className="h-6 w-6" /></div>
-                                <div><h4 className="font-black text-slate-900 text-lg uppercase tracking-tighter group-hover:text-[#115e59]">{room.building ? `${room.building} - ${room.roomNumber || room.name}` : (room.roomNumber || room.name)}</h4><p className="text-[11px] text-slate-500 font-bold uppercase tracking-widest opacity-60">{room.type} • Capacity: {room.capacity}</p></div>
+                          <div key={room.id} onClick={() => !isSubmitting && room.isAvailable && (isEditModalOpen ? handleEditRoomSubmit(room.id) : handleSaveSchedule(room.id))} className={`p-4 rounded-xl border-2 transition-all flex justify-between items-center group ${room.isAvailable ? 'border-slate-100 hover:border-teal-500 bg-white hover:bg-teal-50/50 cursor-pointer shadow-sm hover:shadow-md' : 'opacity-50 cursor-not-allowed border-transparent bg-slate-50'}`}>
+                             <div className="flex items-center gap-3">
+                                <div className={`p-2 rounded-lg ${room.isAvailable ? 'bg-teal-50 text-teal-600 group-hover:bg-[#115e59] group-hover:text-white' : 'bg-slate-200 text-slate-400'} transition-colors`}><MapPin className="h-5 w-5" /></div>
+                                <div>
+                                  <h4 className="font-bold text-slate-900 text-sm uppercase group-hover:text-[#115e59]">{room.building ? `${room.building} - ${room.roomNumber || room.name}` : (room.roomNumber || room.name)}</h4>
+                                  <p className="text-[10px] text-slate-500 font-medium uppercase tracking-wider">{room.type} • Capacity: {room.capacity}</p>
+                                </div>
                              </div>
-                             {room.isAvailable ? <Badge className="bg-teal-600 text-[10px] font-black uppercase rounded-xl px-3 py-1 shadow-lg shadow-teal-900/10">Select Space</Badge> : <Badge variant="outline" className="text-slate-400 border-slate-200 text-[10px] font-black uppercase rounded-xl px-3 py-1 opacity-50">Occupied</Badge>}
+                             {room.isAvailable ? <Badge className="bg-teal-600 text-[10px] font-semibold uppercase rounded-md px-2 py-0.5">Select</Badge> : <Badge variant="outline" className="text-slate-400 border-slate-200 text-[10px] font-semibold uppercase rounded-md px-2 py-0.5">Occupied</Badge>}
                           </div>
                         ))}
                      </div>
-                     <div className="pt-8 border-t border-slate-100 flex justify-between items-center">
-                        <Button variant="ghost" onClick={() => isEditModalOpen ? handleDeleteSchedule(selectedScheduleForEdit.id) : handleSaveSchedule(null)} className="text-[11px] font-black text-red-500 hover:bg-red-50 rounded-2xl px-6 h-12 flex gap-2"><Trash2 className="h-4 w-4" /> {isEditModalOpen ? "Delete Schedule" : "Skip Location"}</Button>
-                        <Button disabled={isSubmitting} className="bg-[#115e59] text-white hover:bg-teal-900 px-8 h-12 rounded-2xl font-black text-[11px] uppercase tracking-widest shadow-xl shadow-teal-900/20 transition-all active:scale-95">{isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4 mr-2" />} System Finalize</Button>
+                     <div className="pt-6 mt-4 border-t border-slate-100 flex justify-between items-center">
+                        <Button variant="ghost" onClick={() => isEditModalOpen ? handleDeleteSchedule(selectedScheduleForEdit.id) : handleSaveSchedule(null)} className="text-xs font-semibold text-red-500 hover:bg-red-50 hover:text-red-600 rounded-xl px-4 flex gap-2"><Trash2 className="h-4 w-4" /> {isEditModalOpen ? "Delete Schedule" : "Skip Location"}</Button>
+                        <Button disabled={isSubmitting} className="bg-[#115e59] text-white hover:bg-teal-900 px-6 rounded-xl font-semibold text-xs transition-colors">{isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4 mr-2" />} Finalize</Button>
                      </div>
                   </div>
                 )}

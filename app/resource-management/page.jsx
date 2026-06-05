@@ -13,7 +13,7 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { getRooms, createRoom, updateRoom, deleteRoom, getRoomScheduleData } from "@/app/actions/room"
 import { getCourses, createCourse, updateCourse, deleteCourse } from "@/app/actions/course"
-import { getCourseSections, createCourseSection, updateCourseSection, deleteCourseSection } from "@/app/actions/section"
+import { getCourseSections, createCourseSection, updateCourseSection, deleteCourseSection, getStudentSectionScheduleData } from "@/app/actions/section"
 import { getFacultyRoster, updateFacultyProfile, deleteFacultyProfile, getFacultyScheduleData } from "@/app/actions/faculty"
 import { getPrograms, createProgram, createSection, deleteProgram, deleteSection } from "@/app/actions/program"
 import { getSystemSettings } from "@/app/actions/settings"
@@ -122,6 +122,8 @@ export default function ResourceManagementPage() {
   const [isLoadingRoomSchedule, setIsLoadingRoomSchedule] = useState(false)
   const [viewingFacultySchedule, setViewingFacultySchedule] = useState(null)
   const [isLoadingFacultySchedule, setIsLoadingFacultySchedule] = useState(false)
+  const [viewingSectionSchedule, setViewingSectionSchedule] = useState(null)
+  const [isLoadingSectionSchedule, setIsLoadingSectionSchedule] = useState(false)
 
   useEffect(() => {
     const init = async () => {
@@ -322,6 +324,19 @@ export default function ResourceManagementPage() {
       setViewingFacultySchedule(null)
     }
     setIsLoadingFacultySchedule(false)
+  }
+
+  const handleViewSectionScheduleClick = async (section, program) => {
+    setIsLoadingSectionSchedule(true)
+    setViewingSectionSchedule({ sectionName: `${program.code} ${section.yearLevel}-${section.name}`, isLoading: true })
+    const res = await getStudentSectionScheduleData(section.id)
+    if (res.success) {
+      setViewingSectionSchedule(res)
+    } else {
+      setFormError(res.error)
+      setViewingSectionSchedule(null)
+    }
+    setIsLoadingSectionSchedule(false)
   }
 
   const handleFacultyEmploymentChange = (e) => {
@@ -747,7 +762,10 @@ export default function ResourceManagementPage() {
                                    {program.sections.map(s => (
                                      <div key={s.id} className="group/sec flex items-center gap-1.5 px-2.5 py-1 bg-slate-50 border border-slate-100 rounded-lg text-xs font-semibold text-slate-700 hover:bg-white hover:border-teal-200 transition-all">
                                         {s.yearLevel}-{s.name}
-                                        <button onClick={() => setDeleteTarget({ type: 'section', id: s.id, name: `${program.code} ${s.yearLevel}-${s.name}`, subId: program.id })} className="opacity-0 group-hover/sec:opacity-100 text-slate-300 hover:text-red-500 transition-all"><X className="h-3 w-3" /></button>
+                                        <div className="flex items-center gap-1.5 opacity-0 group-hover/sec:opacity-100 transition-all ml-1">
+                                          <button onClick={() => handleViewSectionScheduleClick(s, program)} className="text-slate-300 hover:text-indigo-500 transition-colors" title="View Schedule"><Clock className="h-3 w-3" /></button>
+                                          <button onClick={() => setDeleteTarget({ type: 'section', id: s.id, name: `${program.code} ${s.yearLevel}-${s.name}`, subId: program.id })} className="text-slate-300 hover:text-red-500 transition-colors" title="Delete Section"><X className="h-3 w-3" /></button>
+                                        </div>
                                      </div>
                                    ))}
                                    <button 
@@ -1563,6 +1581,128 @@ export default function ResourceManagementPage() {
                             <div className="flex items-center gap-1.5 text-[9px] font-semibold print:opacity-100">
                               <MapPin className="w-2.5 h-2.5 text-slate-600" />
                               <span className="text-slate-700">{item.room}</span>
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* SECTION SCHEDULE MODAL */}
+      {viewingSectionSchedule && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-slate-50 w-full max-w-7xl h-[90vh] rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200">
+            {/* Header */}
+            <div className="bg-white border-b border-slate-200 px-6 py-4 flex justify-between items-center sticky top-0 z-50 print:hidden">
+              <div>
+                <h3 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+                  <Clock className="w-5 h-5 text-teal-600" />
+                  Student Block Schedule: {viewingSectionSchedule.sectionName}
+                </h3>
+                {!viewingSectionSchedule.isLoading && (
+                  <p className="text-sm font-semibold text-slate-500 uppercase tracking-widest mt-1">
+                    {viewingSectionSchedule.activeSemester} Semester {viewingSectionSchedule.activeAcademicYear}
+                  </p>
+                )}
+              </div>
+              <div className="flex items-center gap-3">
+                <Button 
+                  onClick={() => {
+                    window.print()
+                  }}
+                  variant="outline" 
+                  className="hidden md:flex border-slate-200 text-slate-700 bg-white shadow-sm font-semibold hover:bg-slate-50"
+                  disabled={viewingSectionSchedule.isLoading || !viewingSectionSchedule.schedules?.length}
+                >
+                  <Printer className="w-4 h-4 mr-2" /> Print Schedule
+                </Button>
+                <button onClick={() => setViewingSectionSchedule(null)} className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors">
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Content Body */}
+            <div className="flex-1 overflow-auto p-6 custom-scrollbar print:p-0 print:overflow-visible">
+              <div className="hidden print:block text-center border-b-2 border-slate-900 pb-6 mb-8">
+                <h1 className="text-2xl font-bold uppercase tracking-tighter">Student Schedule: {viewingSectionSchedule.sectionName}</h1>
+                <div className="flex justify-center gap-8 mt-4 text-sm font-bold">
+                  <p>TERM: {viewingSectionSchedule.activeSemester?.toUpperCase()} SEMESTER {viewingSectionSchedule.activeAcademicYear}</p>
+                </div>
+              </div>
+
+              {viewingSectionSchedule.isLoading ? (
+                <div className="flex flex-col items-center justify-center h-full text-slate-400 print:hidden">
+                  <Loader2 className="w-8 h-8 animate-spin mb-4" />
+                  <p className="text-sm font-bold uppercase tracking-widest">Loading Schedule...</p>
+                </div>
+              ) : viewingSectionSchedule.schedules?.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-full text-slate-400 bg-white border-2 border-dashed border-slate-200 rounded-xl m-8 print:hidden">
+                  <BookOpen className="w-12 h-12 mb-4 text-slate-300" />
+                  <p className="text-lg font-bold text-slate-900">No Classes Scheduled</p>
+                  <p className="text-sm">There are no classes assigned to this student block for the active term.</p>
+                </div>
+              ) : (
+                <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden min-w-[1000px] print:shadow-none print:border-black">
+                  {/* Grid Header (Days) */}
+                  <div className="grid grid-cols-[100px_repeat(6,1fr)] bg-slate-50 border-b border-slate-200 sticky top-0 z-20 print:bg-transparent print:border-black">
+                    <div className="p-4 border-r border-slate-200 print:border-black"></div>
+                    {daysOfWeek.map(day => (
+                      <div key={day} className="p-4 text-center border-r border-slate-200 last:border-0 print:border-black">
+                        <span className="text-sm font-semibold uppercase tracking-widest text-slate-900">{day}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Grid Body */}
+                  <div className="relative grid grid-cols-[100px_repeat(6,1fr)]" style={{ gridTemplateRows: `repeat(${(endHour - startHour + 1) * 2}, 30px)` }}>
+                    {generateTimeLabels().map((label, i) => (
+                      <div key={i} className="contents">
+                        <div className="flex items-start justify-center pr-3 pt-1 text-[10px] font-semibold text-slate-400 uppercase bg-slate-50 border-r border-slate-200 sticky left-0 z-10 print:bg-transparent print:border-black print:text-black" style={{ gridRow: `${i * 2 + 1} / span 2` }}>
+                          {label}
+                        </div>
+                        <div className="col-start-2 col-span-6 border-b border-slate-100 pointer-events-none print:border-gray-300" style={{ gridRow: `${i * 2 + 1} / span 1` }} />
+                        <div className="col-start-2 col-span-6 border-b border-slate-200/50 border-dashed pointer-events-none print:border-gray-300" style={{ gridRow: `${i * 2 + 2} / span 1` }} />
+                      </div>
+                    ))}
+
+                    {daysOfWeek.map((_, i) => (
+                      <div key={i} className="row-start-1 row-span-full border-r border-slate-200/50 pointer-events-none print:border-gray-300" style={{ gridColumnStart: i + 2 }} />
+                    ))}
+
+                    {viewingSectionSchedule.schedules?.map((item, idx) => {
+                      const dayIdx = daysOfWeek.indexOf(item.day)
+                      if (dayIdx === -1) return null
+                      return (
+                        <div
+                          key={item.id}
+                          className={`
+                            mx-1.5 my-1 p-3 rounded-lg border-l-4 shadow-sm transition-all cursor-default flex flex-col gap-1 overflow-hidden print:shadow-none print:border print:border-l-4 print:border-black
+                            ${colorSchemes[idx % colorSchemes.length]}
+                          `}
+                          style={{ gridRow: `${getRowIndex(item.startTime)} / span ${getRowSpan(item.startTime, item.endTime)}`, gridColumnStart: dayIdx + 2 }}
+                        >
+                          <h4 className="font-bold text-xs leading-tight tracking-tight uppercase line-clamp-2 text-slate-900 mt-1">
+                            {item.courseCode}: {item.courseTitle}
+                          </h4>
+                          <div className="mt-auto space-y-1">
+                            <div className="flex items-center gap-1.5 text-[9px] font-semibold opacity-60 text-slate-600 print:opacity-100">
+                              <CalendarIcon className="w-2.5 h-2.5" />
+                              <span>{new Date(item.startTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} - {new Date(item.endTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                            </div>
+                            <div className="flex items-center gap-1.5 text-[9px] font-semibold print:opacity-100">
+                              <MapPin className="w-2.5 h-2.5 text-slate-600" />
+                              <span className="text-slate-700">{item.room}</span>
+                            </div>
+                            <div className="flex items-center gap-1.5 text-[9px] font-semibold print:opacity-100">
+                              <UserCheck className="w-2.5 h-2.5 text-slate-600" />
+                              <span className="text-slate-700">{item.instructor}</span>
                             </div>
                           </div>
                         </div>

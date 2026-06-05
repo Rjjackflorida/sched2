@@ -455,3 +455,67 @@ export async function deleteSectionSchedule(id) {
     return { success: false, error: "Database error." };
   }
 }
+
+/**
+ * Fetches the active schedule for a specific Student Section (Block).
+ */
+export async function getStudentSectionScheduleData(sectionId) {
+  try {
+    const { getSystemSettings } = await import('@/app/actions/settings');
+    const settingsRes = await getSystemSettings();
+    const activeSemester = settingsRes?.settings?.activeSemester || "1st";
+    const activeYear = settingsRes?.settings?.activeAcademicYear || 2024;
+
+    const studentSection = await prisma.section.findUnique({
+      where: { id: sectionId },
+      include: {
+        program: true,
+        courseSections: {
+          where: {
+            semester: activeSemester,
+            academicYear: activeYear
+          },
+          include: {
+            course: true,
+            faculty: { include: { user: true } },
+            schedules: { include: { room: true } }
+          }
+        }
+      }
+    });
+
+    if (!studentSection) return { success: false, error: "Section not found." };
+
+    const blockName = `${studentSection.program.code} ${studentSection.yearLevel}-${studentSection.name}`;
+
+    // Flatten schedules for the grid
+    const schedules = [];
+    if (studentSection.courseSections) {
+      studentSection.courseSections.forEach(cSec => {
+        cSec.schedules.forEach(sch => {
+          schedules.push({
+            id: sch.id,
+            courseCode: cSec.course.code,
+            courseTitle: cSec.course.title,
+            instructor: cSec.faculty ? `${cSec.faculty.user.firstName} ${cSec.faculty.user.lastName}` : "UNASSIGNED",
+            room: sch.room ? (sch.room.building ? `${sch.room.building} - ${sch.room.roomNumber || sch.room.name}` : (sch.room.roomNumber || sch.room.name)) : "TBA",
+            day: sch.dayOfWeek,
+            startTime: sch.startTime,
+            endTime: sch.endTime,
+          });
+        });
+      });
+    }
+
+    return { 
+      success: true, 
+      sectionName: blockName,
+      activeSemester,
+      activeAcademicYear: activeYear,
+      schedules
+    };
+  } catch (error) {
+    console.error("Failed to fetch section schedule:", error);
+    return { success: false, error: "Failed to load student section schedule." };
+  }
+}
