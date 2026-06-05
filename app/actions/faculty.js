@@ -354,3 +354,67 @@ function formatTime(date) {
   });
 }
 
+/**
+ * Fetches the active schedule for a specific faculty member by User ID.
+ */
+export async function getFacultyScheduleData(userId) {
+  try {
+    const { getSystemSettings } = await import('@/app/actions/settings');
+    const settingsRes = await getSystemSettings();
+    const activeSemester = settingsRes?.settings?.activeSemester || "1st";
+    const activeYear = settingsRes?.settings?.activeAcademicYear || 2024;
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        facultyProfile: {
+          include: {
+            sections: {
+              where: {
+                semester: activeSemester,
+                academicYear: activeYear
+              },
+              include: {
+                course: true,
+                section: { include: { program: true } },
+                schedules: { include: { room: true } }
+              }
+            }
+          }
+        }
+      }
+    });
+
+    if (!user) return { success: false, error: "Faculty not found." };
+
+    // Flatten schedules for the grid
+    const schedules = [];
+    if (user.facultyProfile && user.facultyProfile.sections) {
+      user.facultyProfile.sections.forEach(sec => {
+        sec.schedules.forEach(sch => {
+          schedules.push({
+            id: sch.id,
+            courseCode: sec.course.code,
+            courseTitle: sec.course.title,
+            sectionCode: `${sec.section.program.code} ${sec.section.yearLevel}-${sec.section.name}`,
+            room: sch.room ? (sch.room.building ? `${sch.room.building} - ${sch.room.roomNumber || sch.room.name}` : (sch.room.roomNumber || sch.room.name)) : "TBA",
+            day: sch.dayOfWeek,
+            startTime: sch.startTime,
+            endTime: sch.endTime,
+          });
+        });
+      });
+    }
+
+    return { 
+      success: true, 
+      facultyName: `${user.firstName} ${user.lastName}`,
+      activeSemester,
+      activeAcademicYear: activeYear,
+      schedules
+    };
+  } catch (error) {
+    console.error("Failed to fetch faculty schedule:", error);
+    return { success: false, error: "Failed to load faculty schedule." };
+  }
+}
