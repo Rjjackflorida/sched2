@@ -226,6 +226,7 @@ export async function saveFacultyAvailability(userId, { semester, academicYear, 
 
 /**
  * Fetches the faculty's saved availability for the specified semester and splits them into 30-min UI blocks.
+ * Also returns 'isLocked: true' if the faculty already has courses on the master schedule.
  */
 export async function getFacultyAvailability(userId, semester, academicYear) {
   try {
@@ -234,6 +235,20 @@ export async function getFacultyAvailability(userId, semester, academicYear) {
     });
 
     if (!profile) return { success: false, error: "Faculty profile not found." };
+
+    // --- LOCK TRIGGER CHECK ---
+    // Check if even ONE course has been placed on the master schedule for this faculty
+    const existingSchedule = await prisma.sectionSchedule.findFirst({
+      where: {
+        section: {
+          facultyId: profile.id,
+          semester,
+          academicYear: parseInt(academicYear, 10)
+        }
+      }
+    });
+
+    const isLocked = !!existingSchedule;
 
     const records = await prisma.facultyAvailability.findMany({
       where: {
@@ -260,7 +275,7 @@ export async function getFacultyAvailability(userId, semester, academicYear) {
       }
     });
 
-    return { success: true, blocks };
+    return { success: true, blocks, isLocked };
   } catch (error) {
     console.error("Failed to fetch availability:", error);
     return { success: false, error: "Database error while fetching availability." };

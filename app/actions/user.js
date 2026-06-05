@@ -132,9 +132,12 @@ export async function getUsers() {
 }
 
 export async function createUser(data) {
-  const { firstName, lastName, email, role, password } = data;
+  let { firstName, lastName, email, role, password } = data;
 
-  if (!firstName || !lastName || !email || !role || !password) {
+  // Set default password if not provided (aligned with UI message)
+  const finalPassword = password || "12345678";
+
+  if (!firstName || !lastName || !email || !role) {
     return { success: false, error: "All fields are required." };
   }
 
@@ -149,7 +152,7 @@ export async function createUser(data) {
     }
 
     // Hash the password securely
-    const passwordHash = await bcrypt.hash(password, 10);
+    const passwordHash = await bcrypt.hash(finalPassword, 10);
 
     // Create the user in the database
     // Using a transaction to ensure User and FacultyProfile are created together

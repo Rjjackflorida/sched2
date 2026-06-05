@@ -38,6 +38,7 @@ export async function getCourseSections() {
         courseId: s.courseId,
         courseCode: s.course.code,
         courseTitle: s.course.title,
+        units: s.course.units,
         facultyId: s.facultyId,
         facultyName: s.faculty ? `${s.faculty.user.firstName} ${s.faculty.user.lastName}` : "Unassigned",
         sectionId: s.sectionId,

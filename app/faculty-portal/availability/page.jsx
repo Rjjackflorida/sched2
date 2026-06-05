@@ -10,7 +10,8 @@ import {
   RotateCcw, 
   AlertCircle, 
   CheckCircle2, 
-  Loader2 
+  Loader2,
+  Trash2
 } from "lucide-react"
 import { saveFacultyAvailability, getFacultyAvailability } from "@/app/actions/faculty"
 import { getUserId } from "@/app/actions/auth"
@@ -49,6 +50,7 @@ export default function FacultyAvailability() {
   const [isRecurring, setIsRecurring] = useState(true)
   const [unavailableBlocks, setUnavailableBlocks] = useState(new Set())
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
+  const [isLocked, setIsLocked] = useState(false)
   
   // Drag-and-Drop Selection States
   const [isDragging, setIsDragging] = useState(false)
@@ -59,6 +61,7 @@ export default function FacultyAvailability() {
   const [isSettingsLoading, setIsSettingsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [message, setMessage] = useState(null) // { type: 'success' | 'error', text: string }
+  const [isResetModalOpen, setIsResetModalOpen] = useState(false)
 
   // 1. Initial Load: Get User ID and Global Settings
   useEffect(() => {
@@ -100,8 +103,10 @@ export default function FacultyAvailability() {
       const res = await getFacultyAvailability(userId, semester, academicYear)
       if (res.success) {
         setUnavailableBlocks(new Set(res.blocks))
+        setIsLocked(res.isLocked || false)
       } else {
         setUnavailableBlocks(new Set())
+        setIsLocked(false)
       }
       setHasUnsavedChanges(false)
       setIsLoading(false)
@@ -112,6 +117,7 @@ export default function FacultyAvailability() {
   // --- Interaction Handlers ---
 
   const startDragging = (day, time) => {
+    if (isLocked) return
     const key = `${day}-${time}`
     const mode = unavailableBlocks.has(key) ? 'remove' : 'add'
     setDragMode(mode)
@@ -120,7 +126,7 @@ export default function FacultyAvailability() {
   }
 
   const handleMouseEnter = (day, time) => {
-    if (!isDragging) return
+    if (!isDragging || isLocked) return
     handleBlockAction(`${day}-${time}`, dragMode)
   }
 
@@ -140,6 +146,7 @@ export default function FacultyAvailability() {
   }
 
   const toggleDay = (day) => {
+    if (isLocked) return
     const daySlots = timeSlots.map(time => `${day}-${time}`)
     const allBlocked = daySlots.every(slot => unavailableBlocks.has(slot))
     const newBlocks = new Set(unavailableBlocks)
@@ -151,6 +158,7 @@ export default function FacultyAvailability() {
   }
 
   const quickToggleRange = (type) => {
+    if (isLocked) return
     const newBlocks = new Set(unavailableBlocks)
     daysOfWeek.forEach(day => {
       timeSlots.forEach(time => {
@@ -167,7 +175,7 @@ export default function FacultyAvailability() {
   }
 
   const handleCopyPrevious = async () => {
-    if (!userId) return
+    if (!userId || isLocked) return
     setIsLoading(true)
     // Find what the "previous" semester would be
     const prevSem = semester === "2nd" ? "1st" : semester === "Summer" ? "2nd" : null
@@ -189,6 +197,7 @@ export default function FacultyAvailability() {
   }
 
   const handleSave = async () => {
+    if (isLocked) return
     setIsSubmitting(true)
     setMessage(null)
 
@@ -208,11 +217,15 @@ export default function FacultyAvailability() {
   }
 
   const handleReset = () => {
-    if (confirm("Are you sure you want to clear the entire grid?")) {
-      setUnavailableBlocks(new Set())
-      setHasUnsavedChanges(true)
-      setMessage(null)
-    }
+    if (isLocked) return
+    setIsResetModalOpen(true)
+  }
+
+  const executeReset = () => {
+    setUnavailableBlocks(new Set())
+    setHasUnsavedChanges(true)
+    setMessage(null)
+    setIsResetModalOpen(false)
   }
 
   return (
@@ -236,7 +249,7 @@ export default function FacultyAvailability() {
               size="sm" 
               onClick={handleCopyPrevious}
               className="text-xs h-9 border-teal-200 text-teal-700 hover:bg-teal-50 font-semibold"
-              disabled={isLoading || semester === "1st"}
+              disabled={isLoading || semester === "1st" || isLocked}
             >
               <RotateCcw className="h-3.5 w-3.5 mr-1.5" /> Copy Previous Term
             </Button>
@@ -271,6 +284,23 @@ export default function FacultyAvailability() {
         </div>
       </div>
 
+      {/* Lock Alert */}
+      {isLocked && (
+        <div className="bg-[#115e59] border-teal-800 p-4 rounded-xl shadow-lg shadow-teal-900/10 flex items-start gap-4 animate-in fade-in slide-in-from-top-4 duration-500">
+          <div className="bg-teal-700 p-2 rounded-lg shadow-inner">
+            <AlertCircle className="h-6 w-6 text-teal-50" />
+          </div>
+          <div className="flex-1">
+            <h3 className="font-black text-teal-50 uppercase tracking-widest text-sm">Schedule Finalized</h3>
+            <p className="text-teal-100/80 text-sm font-medium mt-1 leading-relaxed">
+              Your teaching schedule for this semester has already been placed in the Master Schedule. 
+              To prevent conflicts, your availability is now <span className="text-white font-black underline underline-offset-4">LOCKED</span> and cannot be edited.
+            </p>
+            <p className="text-teal-200/60 text-[10px] font-bold uppercase mt-3 tracking-tighter">Please contact the Administrator for special change requests.</p>
+          </div>
+        </div>
+      )}
+
       {/* Success/Error Feedback */}
       {message && (
         <div className={`p-4 rounded-lg flex items-center gap-3 animate-in fade-in slide-in-from-top-2 ${message.type === 'success' ? 'bg-teal-50 text-teal-800 border border-teal-100' : 'bg-red-50 text-red-800 border border-red-100'}`}>
@@ -280,24 +310,28 @@ export default function FacultyAvailability() {
       )}
 
       {/* Interactive Calendar Card */}
-      <Card className="border-slate-200 shadow-xl overflow-hidden bg-white/50 backdrop-blur-sm">
+      <Card className={`border-slate-200 shadow-xl overflow-hidden transition-all duration-500 ${isLocked ? 'grayscale-[0.5] opacity-90' : 'bg-white/50 backdrop-blur-sm'}`}>
         <CardHeader className="border-b border-slate-100 bg-white pb-4">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div>
               <CardTitle className="text-lg font-bold">Weekly Schedule Grid</CardTitle>
-              <CardDescription className="font-medium">Click and Drag to "paint" your schedule. Click Day Name to toggle whole day.</CardDescription>
+              <CardDescription className="font-medium">
+                {isLocked ? "View-Only Mode: Grid is locked." : "Click and Drag to 'paint' your schedule. Click Day Name to toggle whole day."}
+              </CardDescription>
             </div>
             
-            <div className="flex flex-wrap items-center gap-4">
-              <div className="flex gap-2 mr-4 border-r pr-4 border-slate-200">
-                <Button variant="ghost" size="sm" onClick={() => quickToggleRange('morning')} className="text-[10px] font-bold uppercase h-7 px-2 hover:bg-teal-50 hover:text-teal-700">Block Mornings</Button>
-                <Button variant="ghost" size="sm" onClick={() => quickToggleRange('afternoon')} className="text-[10px] font-bold uppercase h-7 px-2 hover:bg-teal-50 hover:text-teal-700">Block Afternoons</Button>
+            {!isLocked && (
+              <div className="flex flex-wrap items-center gap-4">
+                <div className="flex gap-2 mr-4 border-r pr-4 border-slate-200">
+                  <Button variant="ghost" size="sm" onClick={() => quickToggleRange('morning')} className="text-[10px] font-bold uppercase h-7 px-2 hover:bg-teal-50 hover:text-teal-700">Block Mornings</Button>
+                  <Button variant="ghost" size="sm" onClick={() => quickToggleRange('afternoon')} className="text-[10px] font-bold uppercase h-7 px-2 hover:bg-teal-50 hover:text-teal-700">Block Afternoons</Button>
+                </div>
+                <div className="flex items-center gap-4 text-[10px] font-semibold uppercase tracking-widest text-slate-500">
+                  <div className="flex items-center gap-1.5"><div className="w-3 h-3 bg-teal-50 border border-teal-200 rounded-sm"></div> Available</div>
+                  <div className="flex items-center gap-1.5"><div className="w-3 h-3 bg-slate-200 border border-slate-300 rounded-sm diagonal-stripes"></div> Unavailable</div>
+                </div>
               </div>
-              <div className="flex items-center gap-4 text-[10px] font-semibold uppercase tracking-widest text-slate-500">
-                <div className="flex items-center gap-1.5"><div className="w-3 h-3 bg-teal-50 border border-teal-200 rounded-sm"></div> Available</div>
-                <div className="flex items-center gap-1.5"><div className="w-3 h-3 bg-slate-200 border border-slate-300 rounded-sm diagonal-stripes"></div> Unavailable</div>
-              </div>
-            </div>
+            )}
           </div>
         </CardHeader>
         <CardContent className="p-0 overflow-x-auto relative">
@@ -314,11 +348,11 @@ export default function FacultyAvailability() {
               {daysOfWeek.map(day => (
                 <div 
                   key={day} 
-                  onClick={() => toggleDay(day)}
-                  className="p-4 border-r border-slate-200 text-center font-bold text-slate-900 text-sm cursor-pointer hover:bg-slate-200 transition-colors group relative"
+                  onClick={() => !isLocked && toggleDay(day)}
+                  className={`p-4 border-r border-slate-200 text-center font-bold text-slate-900 text-sm ${isLocked ? 'cursor-default' : 'cursor-pointer hover:bg-slate-200 transition-colors group relative'}`}
                 >
                   {day}
-                  <div className="absolute inset-x-0 bottom-0 h-1 bg-teal-600 scale-x-0 group-hover:scale-x-100 transition-transform origin-center"></div>
+                  {!isLocked && <div className="absolute inset-x-0 bottom-0 h-1 bg-teal-600 scale-x-0 group-hover:scale-x-100 transition-transform origin-center"></div>}
                 </div>
               ))}
             </div>
@@ -335,10 +369,11 @@ export default function FacultyAvailability() {
                     return (
                       <div 
                         key={`${day}-${time}`} 
-                        onMouseDown={() => startDragging(day, time)}
-                        onMouseEnter={() => handleMouseEnter(day, time)}
+                        onMouseDown={() => !isLocked && startDragging(day, time)}
+                        onMouseEnter={() => !isLocked && handleMouseEnter(day, time)}
                         className={`
-                          border-r border-slate-200 cursor-pointer transition-all duration-75
+                          border-r border-slate-200 transition-all duration-75
+                          ${isLocked ? 'cursor-not-allowed' : 'cursor-pointer'}
                           ${isBlocked ? 'bg-slate-200/90 diagonal-stripes border-slate-300 shadow-inner' : 'bg-teal-50/5 hover:bg-teal-500/20'}
                         `}
                       >
@@ -358,36 +393,38 @@ export default function FacultyAvailability() {
       </Card>
       
       {/* Footer Actions */}
-      <div className="flex flex-col sm:flex-row justify-between items-center gap-4 pt-4 border-t border-slate-100">
-        <div className="flex items-center gap-4">
-          <p className="text-xs text-slate-400 font-medium italic">
-            Selected: <span className="text-slate-900 font-bold">{unavailableBlocks.size}</span> half-hour blocks.
-          </p>
-          {hasUnsavedChanges && (
-            <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200 animate-pulse font-semibold">
-              Unsaved Changes
-            </Badge>
-          )}
+      {!isLocked && (
+        <div className="flex flex-col sm:flex-row justify-between items-center gap-4 pt-4 border-t border-slate-100">
+          <div className="flex items-center gap-4">
+            <p className="text-xs text-slate-400 font-medium italic">
+              Selected: <span className="text-slate-900 font-bold">{unavailableBlocks.size}</span> half-hour blocks.
+            </p>
+            {hasUnsavedChanges && (
+              <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200 animate-pulse font-semibold">
+                Unsaved Changes
+              </Badge>
+            )}
+          </div>
+          <div className="flex gap-3 w-full sm:w-auto">
+            <Button 
+              variant="outline" 
+              onClick={handleReset}
+              disabled={isSubmitting || isLoading || unavailableBlocks.size === 0}
+              className="flex-1 sm:flex-none border-slate-200 text-slate-600 hover:bg-slate-50 font-semibold"
+            >
+              <RotateCcw className="h-4 w-4 mr-2" /> Reset All
+            </Button>
+            <Button 
+              onClick={handleSave}
+              disabled={isSubmitting || isLoading || !hasUnsavedChanges}
+              className={`flex-1 sm:flex-none text-white shadow-lg font-semibold ${hasUnsavedChanges ? 'bg-[#115e59] hover:bg-teal-900 shadow-teal-900/10' : 'bg-slate-400 cursor-not-allowed'}`}
+            >
+              {isSubmitting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
+              Save Availability
+            </Button>
+          </div>
         </div>
-        <div className="flex gap-3 w-full sm:w-auto">
-          <Button 
-            variant="outline" 
-            onClick={handleReset}
-            disabled={isSubmitting || isLoading || unavailableBlocks.size === 0}
-            className="flex-1 sm:flex-none border-slate-200 text-slate-600 hover:bg-slate-50 font-semibold"
-          >
-            <RotateCcw className="h-4 w-4 mr-2" /> Reset All
-          </Button>
-          <Button 
-            onClick={handleSave}
-            disabled={isSubmitting || isLoading || !hasUnsavedChanges}
-            className={`flex-1 sm:flex-none text-white shadow-lg font-semibold ${hasUnsavedChanges ? 'bg-[#115e59] hover:bg-teal-900 shadow-teal-900/10' : 'bg-slate-400 cursor-not-allowed'}`}
-          >
-            {isSubmitting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
-            Save Availability
-          </Button>
-        </div>
-      </div>
+      )}
 
       <style jsx>{`
         .diagonal-stripes {
@@ -407,6 +444,38 @@ export default function FacultyAvailability() {
           background: #94a3b8;
         }
       `}</style>
+      {/* Reset Confirmation Modal */}
+      {isResetModalOpen && (
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center z-[200] p-4 animate-in fade-in-50 duration-200">
+          <Card className="w-full max-w-md shadow-2xl border-0 overflow-hidden animate-in zoom-in-95 duration-200 rounded-3xl">
+            <div className="p-8 flex flex-col items-center text-center">
+              <div className="bg-red-50 text-red-600 p-4 rounded-full mb-6">
+                <Trash2 className="h-8 w-8" />
+              </div>
+              <h3 className="font-bold text-2xl text-slate-900 mb-2">Clear Grid</h3>
+              <p className="text-slate-500 mb-8 text-sm">
+                Are you sure you want to clear the entire grid? This will remove all marked unavailable times.
+              </p>
+              <div className="flex w-full gap-3">
+                <Button 
+                  variant="outline" 
+                  onClick={() => setIsResetModalOpen(false)}
+                  className="flex-1 rounded-xl h-12 font-bold text-slate-600"
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  onClick={executeReset}
+                  className="flex-1 bg-red-600 hover:bg-red-700 text-white rounded-xl h-12 font-bold shadow-md shadow-red-600/20"
+                >
+                  Clear All
+                </Button>
+              </div>
+            </div>
+          </Card>
+        </div>
+      )}
+
     </div>
   )
 }
