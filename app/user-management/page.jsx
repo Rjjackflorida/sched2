@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { AdminLayout } from "@/components/admin-layout"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import {
   Edit,
   ToggleLeft,
@@ -14,368 +15,302 @@ import {
   Loader2,
   AlertCircle,
   Trash2,
+  X,
+  UserPlus,
+  Mail,
+  Shield,
+  Key,
+  UserCheck
 } from "lucide-react"
 import { getUsers, createUser, updateUser, toggleUserStatus, deleteUser } from "@/app/actions/user"
 
 export default function UserManagementPage() {
   const [users, setUsers] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [fetchError, setFetchError] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Modal Form State (Handles both Add and Edit)
+  // Modal States
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingUser, setEditingUser] = useState(null); // Tracks the user being edited (null = Add mode)
+  const [editingUser, setEditingUser] = useState(null);
+  const [toggleTarget, setToggleTarget] = useState(null);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+
+  // Form States
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
     email: "",
     role: "faculty",
     password: "",
-    confirmPassword: "",
+    confirmPassword: ""
   });
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState(null);
   const [formSuccess, setFormSuccess] = useState(false);
 
-  // Toggle Confirmation State
-  const [toggleTarget, setToggleTarget] = useState(null); // User object targeted for status toggle
-
-  // Delete Confirmation State
-  const [deleteTarget, setDeleteTarget] = useState(null); // User object targeted for deletion
-
-  // Load users from DB
-  const loadUsers = async () => {
-    setIsLoading(true);
-    setFetchError(null);
-    const res = await getUsers();
-    if (res?.success) {
-      setUsers(res.users);
-    } else {
-      setFetchError(res?.error || "Failed to load users.");
-    }
-    setIsLoading(false);
-  };
-
   useEffect(() => {
-    loadUsers();
+    fetchUsers();
   }, []);
 
-  // Handle modal open (Add mode)
-  const handleOpenModal = () => {
-    setEditingUser(null);
+  async function fetchUsers() {
+    setIsLoading(true);
+    const res = await getUsers();
+    if (res.success) {
+      setUsers(res.users);
+    }
+    setIsLoading(false);
+  }
+
+  const handleEditClick = (user) => {
+    setEditingUser(user);
+    setFormData({
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+      role: user.role,
+      password: "",
+      confirmPassword: ""
+    });
     setFormError(null);
     setFormSuccess(false);
+    setIsModalOpen(true);
+  };
+
+  const handleAddClick = () => {
+    setEditingUser(null);
     setFormData({
       firstName: "",
       lastName: "",
       email: "",
       role: "faculty",
       password: "",
-      confirmPassword: "",
+      confirmPassword: ""
     });
-    setIsModalOpen(true);
-  };
-
-  // Handle Edit button click
-  const handleEditClick = (user) => {
-    setEditingUser(user);
     setFormError(null);
     setFormSuccess(false);
-    // Populate form with existing user data
-    setFormData({
-      firstName: user.firstName || "",
-      lastName: user.lastName || "",
-      email: user.email || "",
-      role: user.role || "faculty",
-      password: "", // Leave blank for security
-      confirmPassword: "",
-    });
     setIsModalOpen(true);
   };
 
-  // Handle Toggle Status click (shows confirmation)
-  const handleToggleClick = (user) => {
-    setToggleTarget(user);
-  };
-
-  // Execute the status toggle after confirmation
-  const confirmToggleStatus = async () => {
-    if (!toggleTarget) return;
-
-    const res = await toggleUserStatus(toggleTarget.id, toggleTarget.isActive);
-    if (res?.success) {
-      // Update local state to reflect the change immediately
-      setUsers(prev => prev.map(u => 
-        u.id === toggleTarget.id ? { ...u, isActive: res.isActive } : u
-      ));
-    }
-    setToggleTarget(null);
-  };
-
-  // Handle Delete button click (shows confirmation)
-  const handleDeleteClick = (user) => {
-    setDeleteTarget(user);
-  };
-
-  /**
-   * Executes the deletion after user confirms.
-   * Removes user from DB and local state.
-   */
-  const confirmDelete = async () => {
-    if (!deleteTarget) return;
-
-    const res = await deleteUser(deleteTarget.id);
-    if (res?.success) {
-      // Remove from local list to reflect changes immediately
-      setUsers(prev => prev.filter(u => u.id !== deleteTarget.id));
-    }
-    setDeleteTarget(null);
-  };
-
-  // Handle user form submission (Add or Update)
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setIsSubmitting(true);
     setFormError(null);
     setFormSuccess(false);
 
-    /**
-     * Prepare data for submission.
-     * For new users, we automatically assign the default password '12345678'.
-     */
-    const submissionData = { ...formData };
-    if (!editingUser) {
-      submissionData.password = "12345678";
-      submissionData.confirmPassword = "12345678";
+    // Validation for Edit Password
+    if (editingUser && formData.password) {
+      if (formData.password.length < 8) {
+        return setFormError("Password must be at least 8 characters.");
+      }
+      if (formData.password !== formData.confirmPassword) {
+        return setFormError("Passwords do not match.");
+      }
     }
 
-    // 1. Password Validation (Checks for match and length)
-    if (submissionData.password !== submissionData.confirmPassword) {
-      setFormError("Passwords do not match.");
-      setIsSubmitting(false);
-      return;
-    }
-
-    // 2. Minimum Length Validation (8 characters)
-    if (submissionData.password && submissionData.password.length < 8) {
-      setFormError("Password must be at least 8 characters long.");
-      setIsSubmitting(false);
-      return;
-    }
-
-    // 3. Determine Action (Create vs Update)
+    setIsSubmitting(true);
     let res;
     if (editingUser) {
-      res = await updateUser(editingUser.id, submissionData);
+      res = await updateUser(editingUser.id, formData);
     } else {
-      res = await createUser(submissionData);
+      res = await createUser(formData);
     }
 
-    // 4. Handle Result and Update Local State
-    if (res?.success) {
+    if (res.success) {
       setFormSuccess(true);
-      
-      if (editingUser) {
-        // Update user in local state list
-        setUsers((prev) => prev.map(u => u.id === res.user.id ? res.user : u));
-      } else {
-        // Prepend newly created user to local list
-        setUsers((prev) => [res.user, ...prev]);
+      if (!editingUser) {
+          // Reset form on create
+          setFormData({ firstName: "", lastName: "", email: "", role: "faculty", password: "", confirmPassword: "" });
       }
-
-      /**
-       * Close modal after a delay to allow the admin to read the success message
-       * and the note about the default password.
-       */
-      setTimeout(() => {
-        setIsModalOpen(false);
-        setIsSubmitting(false);
-      }, 2500); 
+      fetchUsers();
+      setTimeout(() => setIsModalOpen(false), 1500);
     } else {
-      setFormError(res?.error || "An error occurred while saving the user.");
-      setIsSubmitting(false);
+      setFormError(res.error);
     }
+    setIsSubmitting(false);
   };
 
-  // Filtered users based on search query
+  const confirmToggleStatus = async () => {
+    if (!toggleTarget) return;
+    setIsSubmitting(true);
+    const res = await toggleUserStatus(toggleTarget.id, !toggleTarget.isActive);
+    if (res.success) {
+      fetchUsers();
+      setToggleTarget(null);
+    }
+    setIsSubmitting(false);
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
+    setIsSubmitting(true);
+    const res = await deleteUser(deleteTarget.id);
+    if (res.success) {
+      fetchUsers();
+      setDeleteTarget(null);
+    } else {
+        alert(res.error);
+    }
+    setIsSubmitting(false);
+  };
+
   const filteredUsers = users.filter(user => 
-    user.fullName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    user.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    user.role?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    user.id?.toLowerCase().includes(searchQuery.toLowerCase())
+    `${user.firstName} ${user.lastName}`.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    user.email.toLowerCase().includes(searchQuery.toLowerCase())
   );
-
-  // Format short ID prefix for clean table display
-  const formatId = (id) => {
-    if (!id) return "N/A";
-    if (id.length > 10) {
-      return id.substring(0, 8).toUpperCase();
-    }
-    return id;
-  };
 
   return (
     <AdminLayout title="User Management">
-      <div className="flex-1 overflow-auto p-6 lg:p-8 relative">
-        <div className="max-w-6xl mx-auto space-y-8">
-          
-          {/* Header Section */}
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <div>
-              <h2 className="text-2xl font-bold text-slate-900">User Management</h2>
-              <p className="text-slate-500 text-sm">Manage system users, roles, and access.</p>
-            </div>
-            <div className="flex items-center gap-3 w-full sm:w-auto">
-              <div className="relative flex-1 sm:w-64">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-400" />
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search users..."
-                  className="w-full pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
-                />
-              </div>
-              <Button 
-                onClick={handleOpenModal}
-                className="bg-[#115e59] hover:bg-teal-900 shrink-0 text-white"
-              >
-                <Plus className="h-4 w-4 mr-2" /> Add User
-              </Button>
-            </div>
+      <div className="flex-1 overflow-auto p-6 lg:p-8 space-y-8">
+        
+        {/* Header Section */}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+          <div>
+            <h2 className="text-3xl font-bold text-slate-900 tracking-tight">User Management</h2>
+            <p className="text-slate-500 mt-1 font-medium text-sm">Control system access and assign roles to university staff.</p>
           </div>
-
-          {/* Main Users Table Card */}
-          <Card>
-            <CardContent className="p-0">
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm text-left border-collapse">
-                  <thead className="bg-slate-50 border-b border-slate-200 text-slate-500">
-                    <tr>
-                      <th className="px-6 py-4 font-medium">ID Prefix</th>
-                      <th className="px-6 py-4 font-medium">Full Name</th>
-                      <th className="px-6 py-4 font-medium">Role</th>
-                      <th className="px-6 py-4 font-medium">Email</th>
-                      <th className="px-6 py-4 font-medium">Status</th>
-                      <th className="px-6 py-4 font-medium text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {isLoading ? (
-                      <tr>
-                        <td colSpan="6" className="text-center py-12 text-slate-400">
-                          <div className="flex items-center justify-center gap-2">
-                            <Loader2 className="h-5 w-5 animate-spin text-teal-600" />
-                            <span>Loading users...</span>
-                          </div>
-                        </td>
-                      </tr>
-                    ) : fetchError ? (
-                      <tr>
-                        <td colSpan="6" className="text-center py-8 text-red-500">
-                          {fetchError}
-                        </td>
-                      </tr>
-                    ) : filteredUsers.length === 0 ? (
-                      <tr>
-                        <td colSpan="6" className="text-center py-8 text-slate-400">
-                          No users found matching your criteria.
-                        </td>
-                      </tr>
-                    ) : (
-                      filteredUsers.map((user) => (
-                        <tr key={user.id} className="hover:bg-slate-50 transition-colors bg-white">
-                          <td className="py-3 px-6 text-slate-600 font-mono text-xs font-semibold" title={user.id}>
-                            {formatId(user.id)}
-                          </td>
-                          <td className="py-3 px-6 text-slate-900 font-semibold">{user.fullName}</td>
-                          <td className="py-3 px-6">
-                            <Badge 
-                              variant={user.role === 'admin' ? 'default' : 'secondary'} 
-                              className={user.role === 'admin' 
-                                ? "bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-100" 
-                                : "bg-slate-50 text-slate-700 border border-slate-200 hover:bg-slate-100"}
-                            >
-                              {user.role === 'admin' ? 'Admin' : 'Faculty'}
-                            </Badge>
-                          </td>
-                          <td className="py-3 px-6 text-slate-500">{user.email}</td>
-                          <td className="py-3 px-6">
-                            <Badge 
-                              variant="outline" 
-                              className={user.isActive 
-                                ? "border-teal-200 text-teal-700 bg-teal-50" 
-                                : "border-slate-200 text-slate-500 bg-slate-50"}
-                            >
-                              {user.isActive ? 'Active' : 'Inactive'}
-                            </Badge>
-                          </td>
-                          <td className="py-3 px-6 text-right">
-                            <div className="flex items-center justify-end gap-1">
-                              <Button 
-                                variant="ghost" 
-                                size="icon" 
-                                className="h-8 w-8 text-slate-500 hover:text-teal-600"
-                                onClick={() => handleEditClick(user)}
-                              >
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                              <Button 
-                                variant="ghost" 
-                                size="icon" 
-                                onClick={() => handleToggleClick(user)}
-                                className={`h-8 w-8 ${user.isActive ? 'text-teal-600 hover:text-teal-700' : 'text-slate-400 hover:text-slate-500'}`}
-                              >
-                                {user.isActive ? <ToggleRight className="h-5 w-5" /> : <ToggleLeft className="h-5 w-5" />}
-                              </Button>
-                              <Button 
-                                variant="ghost" 
-                                size="icon" 
-                                className="h-8 w-8 text-slate-400 hover:text-red-600 transition-colors"
-                                onClick={() => handleDeleteClick(user)}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </CardContent>
-          </Card>
+          <Button 
+            onClick={handleAddClick}
+            className="bg-[#115e59] hover:bg-teal-900 text-white shadow-lg shadow-teal-900/10 px-6 h-11 rounded-xl font-semibold transition-all"
+          >
+            <Plus className="h-4 w-4 mr-2" /> Add New User
+          </Button>
         </div>
+
+        {/* Toolbar Section */}
+        <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
+          <div className="relative w-full sm:w-96">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+            <input 
+              type="text" 
+              placeholder="Search by name or email..." 
+              className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-4 focus:ring-teal-500/10 focus:border-teal-500 transition-all shadow-sm"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+          <div className="text-xs font-semibold text-slate-400 uppercase tracking-widest">
+            Showing {filteredUsers.length} Users
+          </div>
+        </div>
+
+        {/* Users Table Card */}
+        <Card className="border-slate-200 shadow-xl overflow-hidden bg-white/50 backdrop-blur-sm">
+          <CardContent className="p-0">
+            {isLoading ? (
+              <div className="flex flex-col items-center justify-center py-24 gap-3">
+                <Loader2 className="h-10 w-10 text-teal-600 animate-spin" />
+                <p className="text-slate-400 font-semibold uppercase tracking-widest text-xs">Loading User Directory...</p>
+              </div>
+            ) : (
+              <table className="w-full text-left border-collapse">
+                <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase text-[10px] font-semibold tracking-widest">
+                  <tr>
+                    <th className="px-6 py-4">System User</th>
+                    <th className="px-6 py-4">Role</th>
+                    <th className="px-6 py-4">Email Address</th>
+                    <th className="px-6 py-4">Status</th>
+                    <th className="px-6 py-4 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {filteredUsers.map((user) => (
+                    <tr key={user.id} className="hover:bg-slate-50 transition-colors bg-white/40">
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          <Avatar className="h-9 w-9 border-2 border-white shadow-sm">
+                            <AvatarFallback className="bg-teal-100 text-teal-700 font-semibold text-xs">
+                              {user.firstName[0]}{user.lastName[0]}
+                            </AvatarFallback>
+                          </Avatar>
+                          <span className="font-semibold text-slate-900 text-sm">
+                            {user.firstName} {user.lastName}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <Badge variant="outline" className="capitalize text-[10px] font-semibold tracking-tight border-slate-200 text-slate-600">
+                          {user.role}
+                        </Badge>
+                      </td>
+                      <td className="px-6 py-4 text-slate-500 text-sm font-medium">
+                        {user.email}
+                      </td>
+                      <td className="px-6 py-4">
+                        <Badge className={`text-[10px] font-semibold uppercase border-none ${user.isActive ? 'bg-teal-50 text-teal-700' : 'bg-orange-50 text-orange-700'}`}>
+                          {user.isActive ? 'Active' : 'Inactive'}
+                        </Badge>
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <div className="flex justify-end gap-1">
+                          <button 
+                            onClick={() => handleEditClick(user)}
+                            className="p-2 text-slate-400 hover:text-teal-600 hover:bg-teal-50 rounded-lg transition-all"
+                            title="Edit User"
+                          >
+                            <Edit className="h-4 w-4" />
+                          </button>
+                          <button 
+                            onClick={() => setToggleTarget(user)}
+                            className={`p-2 rounded-lg transition-all ${user.isActive ? 'text-slate-400 hover:text-orange-600 hover:bg-orange-50' : 'text-slate-400 hover:text-teal-600 hover:bg-teal-50'}`}
+                            title={user.isActive ? "Deactivate User" : "Activate User"}
+                          >
+                            {user.isActive ? <ToggleRight className="h-5 w-5" /> : <ToggleLeft className="h-5 w-5" />}
+                          </button>
+                          <button 
+                            onClick={() => setDeleteTarget(user)}
+                            className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                            title="Delete User"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                  {filteredUsers.length === 0 && (
+                    <tr>
+                      <td colSpan={5} className="px-6 py-12 text-center text-slate-400 italic text-sm">
+                        No users found matching your search.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            )}
+          </CardContent>
+        </Card>
       </div>
 
       {/* Add/Edit User Modal Dialog */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl border border-slate-200 w-full max-w-md overflow-hidden animate-in fade-in-50 zoom-in-95 duration-150">
+          <div className="bg-white rounded-xl shadow-2xl border border-slate-200 w-full max-w-md overflow-hidden animate-in fade-in-50 zoom-in-95 duration-200">
             {/* Modal Header */}
-            <div className="flex justify-between items-center px-6 py-4 border-b border-slate-100 bg-slate-50">
-              <h3 className="text-base font-bold text-slate-900">
-                {editingUser ? "Edit User Details" : "Add New User"}
-              </h3>
+            <div className="flex justify-between items-center px-6 py-4 border-b border-slate-100 bg-slate-50/80 text-slate-900">
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 bg-teal-100 text-teal-700 rounded-md">
+                  <UserPlus className="h-4 w-4" />
+                </div>
+                <h3 className="font-bold">
+                  {editingUser ? "Edit User Details" : "Add New User"}
+                </h3>
+              </div>
               <button 
                 onClick={() => setIsModalOpen(false)}
-                className="text-slate-400 hover:text-slate-600 text-lg leading-none font-semibold transition-colors focus:outline-none"
+                className="text-slate-400 hover:text-slate-600 transition-colors focus:outline-none"
               >
-                ✕
+                <X className="h-5 w-5" />
               </button>
             </div>
             
             {/* Modal Form */}
-            <form onSubmit={handleSubmit} className="p-6 space-y-4">
+            <form onSubmit={handleSubmit} className="p-6 space-y-5">
               {formError && (
-                <div className="p-3 bg-red-50 border border-red-100 rounded-md text-sm text-red-600">
+                <div className="p-3 bg-red-50 border border-red-100 rounded-lg text-sm text-red-600 animate-in slide-in-from-top-1 font-medium">
                   {formError}
                 </div>
               )}
               {formSuccess && (
-                <div className="p-3 bg-teal-50 border border-teal-100 rounded-md text-sm text-teal-700 font-medium">
+                <div className="p-3 bg-teal-50 border border-teal-100 rounded-lg text-sm text-teal-700 font-bold animate-in slide-in-from-top-1">
                   {editingUser 
                     ? "User successfully updated!" 
                     : "User successfully created! Default password: 12345678"}
@@ -383,48 +318,56 @@ export default function UserManagementPage() {
               )}
 
               <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <label className="text-xs font-semibold text-slate-600 uppercase tracking-wider">First Name</label>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-500 uppercase flex items-center gap-2">
+                    <UserPlus className="h-3.5 w-3.5" /> First Name
+                  </label>
                   <input
                     type="text"
                     required
                     value={formData.firstName}
                     onChange={(e) => setFormData({...formData, firstName: e.target.value})}
                     placeholder="Jane"
-                    className="w-full px-3 py-2 bg-white border border-slate-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all shadow-sm"
                   />
                 </div>
-                <div className="space-y-1">
-                  <label className="text-xs font-semibold text-slate-600 uppercase tracking-wider">Last Name</label>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-500 uppercase flex items-center gap-2">
+                    <UserPlus className="h-3.5 w-3.5" /> Last Name
+                  </label>
                   <input
                     type="text"
                     required
                     value={formData.lastName}
                     onChange={(e) => setFormData({...formData, lastName: e.target.value})}
                     placeholder="Doe"
-                    className="w-full px-3 py-2 bg-white border border-slate-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all shadow-sm"
                   />
                 </div>
               </div>
 
-              <div className="space-y-1">
-                <label className="text-xs font-semibold text-slate-600 uppercase tracking-wider">Email Address</label>
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-500 uppercase flex items-center gap-2">
+                  <Mail className="h-3.5 w-3.5" /> Email Address
+                </label>
                 <input
                   type="email"
                   required
                   value={formData.email}
                   onChange={(e) => setFormData({...formData, email: e.target.value})}
                   placeholder="jane.doe@university.edu"
-                  className="w-full px-3 py-2 bg-white border border-slate-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all shadow-sm"
                 />
               </div>
 
-              <div className="space-y-1">
-                <label className="text-xs font-semibold text-slate-600 uppercase tracking-wider">Role</label>
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-500 uppercase flex items-center gap-2">
+                  <Shield className="h-3.5 w-3.5" /> System Role
+                </label>
                 <select
                   value={formData.role}
                   onChange={(e) => setFormData({...formData, role: e.target.value})}
-                  className="w-full px-3 py-2 bg-white border border-slate-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all shadow-sm bg-white"
                 >
                   <option value="faculty">Faculty</option>
                   <option value="admin">Admin</option>
@@ -433,52 +376,54 @@ export default function UserManagementPage() {
 
               {/* Password fields are only shown during Edit mode */}
               {editingUser && (
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1">
-                    <label className="text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                      New Password
+                <div className="grid grid-cols-2 gap-4 pt-2">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-500 uppercase flex items-center gap-2">
+                      <Key className="h-3.5 w-3.5" /> New Password
                     </label>
                     <input
                       type="password"
                       value={formData.password}
                       onChange={(e) => setFormData({...formData, password: e.target.value})}
                       placeholder="••••••••"
-                      className="w-full px-3 py-2 bg-white border border-slate-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+                      className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all shadow-sm"
                     />
-                    <p className="text-[10px] text-slate-400 italic">Leave blank to keep current</p>
+                    <p className="text-[9px] text-slate-400 font-bold italic">Leave blank to keep current</p>
                   </div>
-                  <div className="space-y-1">
-                    <label className="text-xs font-semibold text-slate-600 uppercase tracking-wider">Confirm Password</label>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-500 uppercase flex items-center gap-2">
+                      <Key className="h-3.5 w-3.5" /> Confirm
+                    </label>
                     <input
                       type="password"
                       value={formData.confirmPassword}
                       onChange={(e) => setFormData({...formData, confirmPassword: e.target.value})}
                       placeholder="••••••••"
-                      className="w-full px-3 py-2 bg-white border border-slate-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+                      className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all shadow-sm"
                     />
                   </div>
                 </div>
               )}
 
-              <div className="pt-4 flex justify-end gap-3 border-t border-slate-100 mt-6">
+              <div className="pt-6 flex justify-end gap-3 border-t border-slate-100">
                 <Button
                   type="button"
-                  variant="outline"
+                  variant="ghost"
                   onClick={() => setIsModalOpen(false)}
-                  className="text-slate-600 border-slate-200 hover:bg-slate-50 text-sm font-medium"
+                  className="text-slate-500 hover:bg-slate-50 px-6"
                   disabled={isSubmitting}
                 >
                   Cancel
                 </Button>
                 <Button
                   type="submit"
-                  className="bg-[#115e59] hover:bg-teal-900 text-white text-sm font-medium"
+                  className="bg-[#115e59] hover:bg-teal-900 text-white shadow-lg shadow-teal-900/10 px-8 font-semibold"
                   disabled={isSubmitting}
                 >
                   {isSubmitting ? (
                     <>
                       <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      {editingUser ? "Saving..." : "Creating..."}
+                      Saving...
                     </>
                   ) : (
                     editingUser ? "Save Changes" : "Create User"
@@ -493,32 +438,32 @@ export default function UserManagementPage() {
       {/* Toggle Status Confirmation Modal */}
       {toggleTarget && (
         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-lg border border-slate-200 w-full max-w-sm overflow-hidden animate-in fade-in-50 zoom-in-95 duration-150">
-            <div className="p-6 text-center">
-              <div className={`mx-auto w-12 h-12 rounded-full flex items-center justify-center mb-4 ${toggleTarget.isActive ? 'bg-orange-50 text-orange-600' : 'bg-teal-50 text-teal-600'}`}>
-                <AlertCircle className="h-6 w-6" />
+          <div className="bg-white rounded-xl shadow-2xl border border-slate-200 w-full max-w-sm overflow-hidden animate-in fade-in-50 zoom-in-95 duration-200">
+            <div className="p-8 text-center">
+              <div className={`mx-auto w-16 h-16 rounded-full flex items-center justify-center mb-6 shadow-sm ${toggleTarget.isActive ? 'bg-orange-50 text-orange-600' : 'bg-teal-50 text-teal-600'}`}>
+                <AlertCircle className="h-8 w-8" />
               </div>
-              <h3 className="text-lg font-bold text-slate-900 mb-2">
+              <h3 className="text-xl font-bold text-slate-900 mb-2">
                 {toggleTarget.isActive ? "Deactivate User?" : "Activate User?"}
               </h3>
-              <p className="text-sm text-slate-500 mb-6">
-                Are you sure you want to set <span className="font-semibold text-slate-700">{toggleTarget.fullName}</span> to 
-                <span className={`font-bold ${toggleTarget.isActive ? 'text-orange-600' : 'text-teal-600'}`}> {toggleTarget.isActive ? "Inactive" : "Active"}</span>?
+              <p className="text-sm text-slate-500 mb-8 leading-relaxed font-medium">
+                Are you sure you want to set <span className="font-bold text-slate-800">{toggleTarget.fullName}</span> to 
+                <span className={`font-semibold ${toggleTarget.isActive ? 'text-orange-600' : 'text-teal-600'}`}> {toggleTarget.isActive ? "Inactive" : "Active"}</span>?
               </p>
               
               <div className="flex gap-3 justify-center">
                 <Button
-                  variant="outline"
+                  variant="ghost"
                   onClick={() => setToggleTarget(null)}
-                  className="px-4 text-slate-600 border-slate-200 hover:bg-slate-50"
+                  className="px-6 text-slate-500 hover:bg-slate-50"
                 >
                   Cancel
                 </Button>
                 <Button
                   onClick={confirmToggleStatus}
-                  className={toggleTarget.isActive 
-                    ? "bg-orange-600 hover:bg-orange-700 text-white px-6" 
-                    : "bg-[#115e59] hover:bg-teal-900 text-white px-6"}
+                  className={`px-8 shadow-lg font-semibold ${toggleTarget.isActive 
+                    ? "bg-orange-600 hover:bg-orange-700 text-white shadow-orange-600/10" 
+                    : "bg-[#115e59] hover:bg-teal-900 text-white shadow-teal-900/10"}`}
                 >
                   Confirm
                 </Button>
@@ -530,29 +475,29 @@ export default function UserManagementPage() {
       {/* Delete Confirmation Modal */}
       {deleteTarget && (
         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl border border-slate-200 w-full max-w-sm overflow-hidden animate-in fade-in-50 zoom-in-95 duration-150">
-            <div className="p-6 text-center">
+          <div className="bg-white rounded-xl shadow-2xl border border-slate-200 w-full max-w-sm overflow-hidden animate-in fade-in-50 zoom-in-95 duration-200">
+            <div className="p-8 text-center">
               {/* Warning Icon */}
-              <div className="mx-auto w-12 h-12 rounded-full bg-red-50 text-red-600 flex items-center justify-center mb-4">
-                <AlertCircle className="h-6 w-6" />
+              <div className="mx-auto w-16 h-16 rounded-full bg-red-50 text-red-600 flex items-center justify-center mb-6 shadow-sm">
+                <Trash2 className="h-8 w-8" />
               </div>
-              <h3 className="text-lg font-bold text-slate-900 mb-2">Delete User?</h3>
-              <p className="text-sm text-slate-500 mb-6">
-                Are you sure you want to delete <span className="font-semibold text-slate-700">{deleteTarget.fullName}</span>? This action cannot be undone and will remove all associated data.
+              <h3 className="text-xl font-bold text-slate-900 mb-2">Delete User Account?</h3>
+              <p className="text-sm text-slate-500 mb-8 leading-relaxed font-medium">
+                Are you sure you want to delete <span className="font-bold text-slate-900">{deleteTarget.fullName}</span>? This action is <span className="text-red-600 font-semibold">permanent</span> and will remove all associated profile data.
               </p>
               
               {/* Modal Actions */}
               <div className="flex gap-3 justify-center">
                 <Button
-                  variant="outline"
+                  variant="ghost"
                   onClick={() => setDeleteTarget(null)}
-                  className="px-4 text-slate-600 border-slate-200 hover:bg-slate-50"
+                  className="px-6 text-slate-500 hover:bg-slate-50"
                 >
                   Cancel
                 </Button>
                 <Button
                   onClick={confirmDelete}
-                  className="bg-red-600 hover:bg-red-700 text-white px-6"
+                  className="bg-red-600 hover:bg-red-700 text-white px-8 shadow-lg shadow-red-600/10 font-semibold"
                 >
                   Delete User
                 </Button>

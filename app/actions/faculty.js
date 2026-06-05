@@ -306,7 +306,10 @@ export async function getFacultyProfileData(userId, semester, academicYear) {
           id: s.id,
           courseCode: s.course.code,
           courseTitle: s.course.title,
-          sectionCode: `${s.section.program.code}-${s.section.yearLevel}${s.section.name}`,
+          programCode: s.section.program.code,
+          yearLevel: s.section.yearLevel,
+          sectionName: s.section.name,
+          sectionCode: `${s.section.program.code} ${s.section.yearLevel}-${s.section.name}`,
           units: s.course.units,
           schedules: s.schedules.map(sch => ({
             day: sch.dayOfWeek,

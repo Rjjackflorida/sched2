@@ -3,12 +3,20 @@ import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Loader2, Save, RotateCcw, AlertCircle, CheckCircle2, Calendar } from "lucide-react"
+import { 
+  Calendar, 
+  Clock, 
+  Save, 
+  RotateCcw, 
+  AlertCircle, 
+  CheckCircle2, 
+  Loader2 
+} from "lucide-react"
 import { saveFacultyAvailability, getFacultyAvailability } from "@/app/actions/faculty"
 import { getUserId } from "@/app/actions/auth"
 import { getSystemSettings } from "@/app/actions/settings"
 
-const daysOfWeek = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]
+const daysOfWeek = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
 
 // Generate 30-minute intervals from 7:00 AM to 9:00 PM
 const generateTimeSlots = () => {
@@ -216,8 +224,8 @@ export default function FacultyAvailability() {
       {/* Header Section */}
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
         <div>
-          <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight">My Availability</h2>
-          <p className="text-slate-500 mt-1">Select the time blocks when you are <span className="font-bold text-red-600">unavailable</span> to teach.</p>
+          <h2 className="text-3xl font-bold text-slate-900 tracking-tight">My Availability</h2>
+          <p className="text-slate-500 mt-1 font-medium">Select the time blocks when you are <span className="font-bold text-red-600">unavailable</span> to teach.</p>
         </div>
 
         <div className="flex flex-wrap items-center gap-4">
@@ -227,7 +235,7 @@ export default function FacultyAvailability() {
               variant="outline" 
               size="sm" 
               onClick={handleCopyPrevious}
-              className="text-xs h-9 border-teal-200 text-teal-700 hover:bg-teal-50"
+              className="text-xs h-9 border-teal-200 text-teal-700 hover:bg-teal-50 font-semibold"
               disabled={isLoading || semester === "1st"}
             >
               <RotateCcw className="h-3.5 w-3.5 mr-1.5" /> Copy Previous Term
@@ -242,7 +250,7 @@ export default function FacultyAvailability() {
                 value={academicYear} 
                 onChange={(e) => setAcademicYear(parseInt(e.target.value))}
                 disabled={isSettingsLoading}
-                className="text-sm font-bold text-slate-700 focus:outline-none bg-transparent disabled:opacity-50"
+                className="text-sm font-semibold text-slate-700 focus:outline-none bg-transparent disabled:opacity-50"
               >
                 <option value={academicYear}>{`A.Y. ${academicYear}-${academicYear + 1}`}</option>
                 <option value={academicYear - 1}>{`A.Y. ${academicYear - 1}-${academicYear}`}</option>
@@ -253,7 +261,7 @@ export default function FacultyAvailability() {
               value={semester} 
               onChange={(e) => setSemester(e.target.value)}
               disabled={isSettingsLoading}
-              className="text-sm font-bold text-slate-700 px-3 focus:outline-none bg-transparent disabled:opacity-50"
+              className="text-sm font-semibold text-slate-700 px-3 focus:outline-none bg-transparent disabled:opacity-50"
             >
               <option value="1st">1st Semester</option>
               <option value="2nd">2nd Semester</option>
@@ -267,17 +275,17 @@ export default function FacultyAvailability() {
       {message && (
         <div className={`p-4 rounded-lg flex items-center gap-3 animate-in fade-in slide-in-from-top-2 ${message.type === 'success' ? 'bg-teal-50 text-teal-800 border border-teal-100' : 'bg-red-50 text-red-800 border border-red-100'}`}>
           {message.type === 'success' ? <CheckCircle2 className="h-5 w-5" /> : <AlertCircle className="h-5 w-5" />}
-          <p className="text-sm font-medium">{message.text}</p>
+          <p className="text-sm font-semibold">{message.text}</p>
         </div>
       )}
 
       {/* Interactive Calendar Card */}
-      <Card className="border-slate-200 shadow-xl overflow-hidden">
+      <Card className="border-slate-200 shadow-xl overflow-hidden bg-white/50 backdrop-blur-sm">
         <CardHeader className="border-b border-slate-100 bg-white pb-4">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div>
-              <CardTitle className="text-lg">Weekly Schedule Grid</CardTitle>
-              <CardDescription>Click and Drag to "paint" your schedule. Click Day Name to toggle whole day.</CardDescription>
+              <CardTitle className="text-lg font-bold">Weekly Schedule Grid</CardTitle>
+              <CardDescription className="font-medium">Click and Drag to "paint" your schedule. Click Day Name to toggle whole day.</CardDescription>
             </div>
             
             <div className="flex flex-wrap items-center gap-4">
@@ -285,7 +293,7 @@ export default function FacultyAvailability() {
                 <Button variant="ghost" size="sm" onClick={() => quickToggleRange('morning')} className="text-[10px] font-bold uppercase h-7 px-2 hover:bg-teal-50 hover:text-teal-700">Block Mornings</Button>
                 <Button variant="ghost" size="sm" onClick={() => quickToggleRange('afternoon')} className="text-[10px] font-bold uppercase h-7 px-2 hover:bg-teal-50 hover:text-teal-700">Block Afternoons</Button>
               </div>
-              <div className="flex items-center gap-4 text-[10px] font-black uppercase tracking-widest">
+              <div className="flex items-center gap-4 text-[10px] font-semibold uppercase tracking-widest text-slate-500">
                 <div className="flex items-center gap-1.5"><div className="w-3 h-3 bg-teal-50 border border-teal-200 rounded-sm"></div> Available</div>
                 <div className="flex items-center gap-1.5"><div className="w-3 h-3 bg-slate-200 border border-slate-300 rounded-sm diagonal-stripes"></div> Unavailable</div>
               </div>
@@ -301,13 +309,13 @@ export default function FacultyAvailability() {
           
           <div className="min-w-[800px]">
             {/* Header */}
-            <div className="grid grid-cols-6 border-b border-slate-200 bg-slate-50 sticky top-0 z-10">
-              <div className="p-4 border-r border-slate-200 text-center font-bold text-slate-400 text-[10px] uppercase tracking-tighter">Time Interval</div>
+            <div className="grid grid-cols-7 border-b border-slate-200 bg-slate-50 sticky top-0 z-10">
+              <div className="p-4 border-r border-slate-200 text-center font-semibold text-slate-400 text-[10px] uppercase tracking-tighter">Time Interval</div>
               {daysOfWeek.map(day => (
                 <div 
                   key={day} 
                   onClick={() => toggleDay(day)}
-                  className="p-4 border-r border-slate-200 text-center font-extrabold text-slate-900 text-sm cursor-pointer hover:bg-slate-200 transition-colors group relative"
+                  className="p-4 border-r border-slate-200 text-center font-bold text-slate-900 text-sm cursor-pointer hover:bg-slate-200 transition-colors group relative"
                 >
                   {day}
                   <div className="absolute inset-x-0 bottom-0 h-1 bg-teal-600 scale-x-0 group-hover:scale-x-100 transition-transform origin-center"></div>
@@ -318,8 +326,8 @@ export default function FacultyAvailability() {
             {/* Body */}
             <div className="divide-y divide-slate-100 bg-white max-h-[550px] overflow-y-auto custom-scrollbar">
               {timeSlots.map(time => (
-                <div key={time} className="grid grid-cols-6 h-10 group/row">
-                  <div className="border-r border-slate-200 p-2 flex items-center justify-center text-[10px] font-bold uppercase text-slate-500 bg-slate-50 group-hover/row:bg-slate-100 transition-colors">
+                <div key={time} className="grid grid-cols-7 h-10 group/row">
+                  <div className="border-r border-slate-200 p-2 flex items-center justify-center text-[10px] font-semibold uppercase text-slate-500 bg-slate-50 group-hover/row:bg-slate-100 transition-colors">
                     {format12Hour(time)}
                   </div>
                   {daysOfWeek.map(day => {
@@ -356,7 +364,7 @@ export default function FacultyAvailability() {
             Selected: <span className="text-slate-900 font-bold">{unavailableBlocks.size}</span> half-hour blocks.
           </p>
           {hasUnsavedChanges && (
-            <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200 animate-pulse">
+            <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200 animate-pulse font-semibold">
               Unsaved Changes
             </Badge>
           )}
@@ -366,14 +374,14 @@ export default function FacultyAvailability() {
             variant="outline" 
             onClick={handleReset}
             disabled={isSubmitting || isLoading || unavailableBlocks.size === 0}
-            className="flex-1 sm:flex-none border-slate-200 text-slate-600 hover:bg-slate-50"
+            className="flex-1 sm:flex-none border-slate-200 text-slate-600 hover:bg-slate-50 font-semibold"
           >
             <RotateCcw className="h-4 w-4 mr-2" /> Reset All
           </Button>
           <Button 
             onClick={handleSave}
             disabled={isSubmitting || isLoading || !hasUnsavedChanges}
-            className={`flex-1 sm:flex-none text-white shadow-lg ${hasUnsavedChanges ? 'bg-[#115e59] hover:bg-teal-900 shadow-teal-900/10' : 'bg-slate-400 cursor-not-allowed'}`}
+            className={`flex-1 sm:flex-none text-white shadow-lg font-semibold ${hasUnsavedChanges ? 'bg-[#115e59] hover:bg-teal-900 shadow-teal-900/10' : 'bg-slate-400 cursor-not-allowed'}`}
           >
             {isSubmitting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
             Save Availability
@@ -386,10 +394,10 @@ export default function FacultyAvailability() {
           background-image: repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(0,0,0,0.04) 10px, rgba(0,0,0,0.04) 20px);
         }
         .custom-scrollbar::-webkit-scrollbar {
-          width: 6px;
+          width: 5px;
         }
         .custom-scrollbar::-webkit-scrollbar-track {
-          background: #f1f5f9;
+          background: #f8fafc;
         }
         .custom-scrollbar::-webkit-scrollbar-thumb {
           background: #cbd5e1;

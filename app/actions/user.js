@@ -2,6 +2,110 @@
 
 import { prisma } from "@/lib/prisma"
 import bcrypt from "bcryptjs"
+import { getSession } from "@/lib/session"
+
+/**
+ * Retrieves the currently logged-in user's details based on the session.
+ */
+export async function getCurrentUser() {
+  try {
+    const session = await getSession();
+    if (!session) return { success: false, error: "No active session." };
+
+    const user = await prisma.user.findUnique({
+      where: { id: session.userId },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        email: true,
+        role: true,
+        createdAt: true,
+      }
+    });
+
+    if (!user) return { success: false, error: "User not found." };
+
+    return { 
+      success: true, 
+      user: {
+        ...user,
+        fullName: `${user.firstName} ${user.lastName}`
+      } 
+    };
+  } catch (error) {
+    console.error("Failed to fetch current user:", error);
+    return { success: false, error: "Database error." };
+  }
+}
+
+/**
+ * Updates the current user's password after verifying the current one.
+ */
+export async function updateAccountSettings(data) {
+  const { currentPassword, newPassword } = data;
+
+  try {
+    const session = await getSession();
+    if (!session) return { success: false, error: "No active session." };
+
+    const user = await prisma.user.findUnique({
+      where: { id: session.userId },
+    });
+
+    if (!user) return { success: false, error: "User not found." };
+
+    // Verify current password
+    const isPasswordValid = await bcrypt.compare(currentPassword, user.passwordHash);
+    if (!isPasswordValid) {
+      return { success: false, error: "Incorrect current password." };
+    }
+
+    // Hash and update new password
+    const passwordHash = await bcrypt.hash(newPassword, 10);
+    await prisma.user.update({
+      where: { id: session.userId },
+      data: { passwordHash },
+    });
+
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to update account settings:", error);
+    return { success: false, error: "Failed to update password." };
+  }
+}
+
+/**
+ * Updates the current user's personal profile (name).
+ */
+export async function updateProfile(data) {
+  const { firstName, lastName } = data;
+
+  try {
+    const session = await getSession();
+    if (!session) return { success: false, error: "No active session." };
+
+    const updatedUser = await prisma.user.update({
+      where: { id: session.userId },
+      data: { firstName, lastName },
+    });
+
+    return { 
+      success: true, 
+      user: {
+        id: updatedUser.id,
+        firstName: updatedUser.firstName,
+        lastName: updatedUser.lastName,
+        fullName: `${updatedUser.firstName} ${updatedUser.lastName}`,
+        email: updatedUser.email,
+        role: updatedUser.role,
+      }
+    };
+  } catch (error) {
+    console.error("Failed to update profile:", error);
+    return { success: false, error: "Database error while updating profile." };
+  }
+}
 
 export async function getUsers() {
   try {

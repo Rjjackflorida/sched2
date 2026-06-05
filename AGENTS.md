@@ -33,6 +33,13 @@ Refer to the following table relationships when generating queries or mutations:
 - **Backgrounds:** Light Slate (`#F8FAFC`)
 - **Error States:** Use `bg-red-50` with `text-red-600` for alerts/conflicts.
 - **Component Library:** Always prefer Shadcn UI components over custom CSS where possible.
+- **Typography Weights:**
+    - **Avoid `font-black` and `font-extrabold`.** These are too heavy for a professional UI.
+    - **Headings:** Use `font-bold`.
+    - **Sub-headings/Labels:** Use `font-semibold`.
+    - **Metadata/Tags:** Use `font-medium`.
+    - **Body/Table Data:** Use `font-normal`.
+    - **Standardized Metadata:** `text-[10px] font-semibold uppercase tracking-widest`.
 
 ## 6. Coding Guidelines for AI
 - **Server Actions:** Use Next.js Server Actions for database mutations.
