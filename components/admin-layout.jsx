@@ -155,9 +155,6 @@ export function AdminLayout({ children, title }) {
 
         {/* Sidebar Footer: Quick Actions/Help */}
         <div className="p-4 border-t border-slate-200 space-y-4">
-          <Button className="w-full bg-[#115e59] hover:bg-teal-900 text-white">
-            Create New Schedule
-          </Button>
           <a href="#" className="flex items-center gap-2 text-sm text-slate-500 hover:text-slate-700 justify-center">
             <HelpCircle className="h-4 w-4" />
             Help & Resources

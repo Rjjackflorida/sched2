@@ -6,20 +6,20 @@ import { useState, useEffect } from "react"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { 
-  LayoutDashboard, 
-  CalendarDays, 
-  CalendarRange, 
-  MessageSquare, 
-  HelpCircle, 
-  User, 
-  Mail, 
-  Shield, 
-  Key, 
-  X, 
-  Loader2, 
-  Lock, 
-  Calendar as CalendarIcon, 
+import {
+  LayoutDashboard,
+  CalendarDays,
+  CalendarRange,
+  MessageSquare,
+  HelpCircle,
+  User,
+  Mail,
+  Shield,
+  Key,
+  X,
+  Loader2,
+  Lock,
+  Calendar as CalendarIcon,
   Fingerprint,
   Settings
 } from "lucide-react"
@@ -37,13 +37,13 @@ import { getCurrentUser, updateProfile, updateAccountSettings } from "@/app/acti
 
 export default function FacultyLayout({ children }) {
   const pathname = usePathname()
-  
+
   // --- USER PROFILE & SETTINGS STATE ---
   const [isProfileOpen, setIsProfileOpen] = useState(false)
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [user, setUser] = useState(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  
+
   // Form States
   const [profileData, setProfileData] = useState({ firstName: "", lastName: "" })
   const [passwordData, setPasswordData] = useState({ currentPassword: "", newPassword: "", confirmPassword: "" })
@@ -102,7 +102,7 @@ export default function FacultyLayout({ children }) {
     { name: "Dashboard", href: "/faculty-portal", icon: LayoutDashboard },
     { name: "My Availability", href: "/faculty-portal/availability", icon: CalendarRange },
     { name: "My Schedule", href: "/faculty-portal/schedule", icon: CalendarDays },
-    { name: "Requests / Messages", href: "/faculty-portal/requests", icon: MessageSquare },
+    // FUTURE FEATURE { name: "Requests / Messages", href: "/faculty-portal/requests", icon: MessageSquare },
   ]
 
   const initials = user ? `${user.firstName[0]}${user.lastName[0]}` : "FM"
@@ -127,11 +127,10 @@ export default function FacultyLayout({ children }) {
               <Link
                 key={item.name}
                 href={item.href}
-                className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                  isActive
-                    ? "bg-teal-50 text-teal-700"
-                    : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
-                }`}
+                className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${isActive
+                  ? "bg-teal-50 text-teal-700"
+                  : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                  }`}
               >
                 <item.icon className={`h-4 w-4 ${isActive ? "text-teal-600" : "text-slate-400"}`} />
                 {item.name}
@@ -203,7 +202,7 @@ export default function FacultyLayout({ children }) {
               </div>
               <button onClick={() => setIsProfileOpen(false)} className="text-slate-400 hover:text-slate-600 transition-colors"><X className="h-6 w-6" /></button>
             </div>
-            
+
             <form onSubmit={handleProfileUpdate} className="p-8 space-y-6">
               <div className="flex flex-col items-center mb-6">
                 <Avatar className="h-24 w-24 ring-8 ring-teal-500/5 shadow-xl mb-4">
@@ -222,19 +221,19 @@ export default function FacultyLayout({ children }) {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">First Name</label>
-                  <input 
-                    required 
-                    value={profileData.firstName} 
-                    onChange={e => setProfileData({...profileData, firstName: e.target.value})}
+                  <input
+                    required
+                    value={profileData.firstName}
+                    onChange={e => setProfileData({ ...profileData, firstName: e.target.value })}
                     className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-700 focus:outline-none focus:ring-4 focus:ring-teal-500/10 focus:border-teal-500 transition-all"
                   />
                 </div>
                 <div className="space-y-2">
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Last Name</label>
-                  <input 
-                    required 
-                    value={profileData.lastName} 
-                    onChange={e => setProfileData({...profileData, lastName: e.target.value})}
+                  <input
+                    required
+                    value={profileData.lastName}
+                    onChange={e => setProfileData({ ...profileData, lastName: e.target.value })}
                     className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-700 focus:outline-none focus:ring-4 focus:ring-teal-500/10 focus:border-teal-500 transition-all"
                   />
                 </div>
@@ -249,8 +248,8 @@ export default function FacultyLayout({ children }) {
               </div>
 
               <div className="pt-4 flex justify-end">
-                <Button 
-                  type="submit" 
+                <Button
+                  type="submit"
                   disabled={isSubmitting}
                   className="bg-[#115e59] hover:bg-teal-900 text-white shadow-lg shadow-teal-900/10 px-8 h-12 rounded-xl text-xs font-black uppercase tracking-widest transition-all"
                 >
@@ -275,7 +274,7 @@ export default function FacultyLayout({ children }) {
               </div>
               <button onClick={() => setIsSettingsOpen(false)} className="text-slate-400 hover:text-slate-600 transition-colors"><X className="h-6 w-6" /></button>
             </div>
-            
+
             <div className="p-8 space-y-8">
               {/* Account Metadata */}
               <div className="space-y-4">
@@ -295,41 +294,41 @@ export default function FacultyLayout({ children }) {
               {/* Password Form */}
               <form onSubmit={handlePasswordUpdate} className="space-y-4 pt-4 border-t border-slate-100">
                 <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Change Password</h4>
-                
+
                 {formError && <div className="p-4 bg-red-50 border border-red-100 rounded-xl text-red-600 text-xs font-black uppercase tracking-tight animate-in slide-in-from-top-2">{formError}</div>}
                 {formSuccess && <div className="p-4 bg-teal-50 border border-teal-100 rounded-xl text-teal-700 text-xs font-black uppercase tracking-tight animate-in slide-in-from-top-2">{formSuccess}</div>}
 
                 <div className="space-y-2">
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Current Password</label>
-                  <input 
+                  <input
                     type="password"
-                    required 
-                    value={passwordData.currentPassword} 
-                    onChange={e => setPasswordData({...passwordData, currentPassword: e.target.value})}
+                    required
+                    value={passwordData.currentPassword}
+                    onChange={e => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
                     placeholder="••••••••"
                     className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-700 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all shadow-sm"
                   />
                 </div>
-                
+
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">New Password</label>
-                    <input 
+                    <input
                       type="password"
-                      required 
-                      value={passwordData.newPassword} 
-                      onChange={e => setPasswordData({...passwordData, newPassword: e.target.value})}
+                      required
+                      value={passwordData.newPassword}
+                      onChange={e => setPasswordData({ ...passwordData, newPassword: e.target.value })}
                       placeholder="••••••••"
                       className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-700 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all shadow-sm"
                     />
                   </div>
                   <div className="space-y-2">
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Confirm New</label>
-                    <input 
+                    <input
                       type="password"
-                      required 
-                      value={passwordData.confirmPassword} 
-                      onChange={e => setPasswordData({...passwordData, confirmPassword: e.target.value})}
+                      required
+                      value={passwordData.confirmPassword}
+                      onChange={e => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
                       placeholder="••••••••"
                       className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-700 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all shadow-sm"
                     />
@@ -337,8 +336,8 @@ export default function FacultyLayout({ children }) {
                 </div>
 
                 <div className="pt-6 flex justify-end">
-                  <Button 
-                    type="submit" 
+                  <Button
+                    type="submit"
                     disabled={isSubmitting}
                     className="bg-slate-900 hover:bg-black text-white shadow-lg shadow-slate-900/10 px-8 h-12 rounded-xl text-xs font-black uppercase tracking-widest transition-all"
                   >
