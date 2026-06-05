@@ -3,25 +3,87 @@
 import { useState, useEffect } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Download, Calendar as CalendarIcon, MapPin, Loader2, BookOpen } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
+import { Download, Calendar as CalendarIcon, MapPin, Loader2, BookOpen, Clock, Printer } from "lucide-react"
 import { getUserId } from "@/app/actions/auth"
 import { getFacultyProfileData } from "@/app/actions/faculty"
+import { getSystemSettings } from "@/app/actions/settings"
+
+const daysOfWeek = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]
+const startHour = 7
+const endHour = 21
+
+/**
+ * Generates 1-hour time labels for the left axis.
+ */
+const generateTimeLabels = () => {
+  const labels = []
+  for (let hour = startHour; hour <= endHour; hour++) {
+    const period = hour >= 12 ? 'PM' : 'AM'
+    const displayHour = hour % 12 || 12
+    labels.push(`${displayHour}:00 ${period}`)
+  }
+  return labels
+}
+
+/**
+ * Calculates the grid row index for a given time.
+ * Each row represents 30 minutes.
+ */
+const getRowIndex = (date) => {
+  const hours = date.getUTCHours()
+  const minutes = date.getUTCMinutes()
+  const totalMinutesFromStart = (hours - startHour) * 60 + minutes
+  return Math.floor(totalMinutesFromStart / 30) + 1
+}
+
+/**
+ * Calculates how many 30-min rows a class spans.
+ */
+const getRowSpan = (start, end) => {
+  const diffMs = end.getTime() - start.getTime()
+  const diffMins = diffMs / (1000 * 60)
+  return Math.floor(diffMins / 30)
+}
+
+const colorSchemes = [
+  "bg-teal-50 border-teal-200 text-teal-900 shadow-teal-100/50",
+  "bg-blue-50 border-blue-200 text-blue-900 shadow-blue-100/50",
+  "bg-indigo-50 border-indigo-200 text-indigo-900 shadow-indigo-100/50",
+  "bg-slate-50 border-slate-200 text-slate-900 shadow-slate-100/50",
+  "bg-cyan-50 border-cyan-200 text-cyan-900 shadow-cyan-100/50",
+  "bg-emerald-50 border-emerald-200 text-emerald-900 shadow-emerald-100/50",
+]
 
 export default function FacultySchedule() {
   const [data, setData] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [currentTime, setCurrentTime] = useState(new Date())
 
   useEffect(() => {
     async function loadData() {
       const userId = await getUserId();
       if (userId) {
-        const res = await getFacultyProfileData(userId, "1st", "2024");
-        if (res.success) setData(res.data);
+        const settingsRes = await getSystemSettings();
+        if (settingsRes.success && settingsRes.settings) {
+          const { activeSemester, activeAcademicYear } = settingsRes.settings;
+          const res = await getFacultyProfileData(userId, activeSemester, activeAcademicYear.toString());
+          if (res.success) {
+            setData({ ...res.data, activeSemester, activeAcademicYear });
+          }
+        }
       }
       setIsLoading(false);
     }
     loadData();
+
+    const timer = setInterval(() => setCurrentTime(new Date()), 60000)
+    return () => clearInterval(timer)
   }, [])
+
+  const handlePrint = () => {
+    window.print()
+  }
 
   if (isLoading) {
     return (
@@ -31,20 +93,59 @@ export default function FacultySchedule() {
     )
   }
 
+  const timeLabels = generateTimeLabels()
+  
+  // Flatten all schedules into a positionable array
+  const scheduleItems = []
+  data?.sections?.forEach((section, sIdx) => {
+    section.schedules.forEach((sch, schIdx) => {
+      const sTime = new Date(sch.startTime)
+      const eTime = new Date(sch.endTime)
+      
+      scheduleItems.push({
+        id: `${section.id}-${schIdx}`,
+        courseCode: section.courseCode,
+        courseTitle: section.courseTitle,
+        sectionCode: section.sectionCode,
+        day: sch.day,
+        room: sch.room,
+        time: sch.time,
+        rowStart: getRowIndex(sTime),
+        rowSpan: getRowSpan(sTime, eTime),
+        colorClass: colorSchemes[sIdx % colorSchemes.length]
+      })
+    })
+  })
+
   return (
-    <div className="p-6 lg:p-8 max-w-6xl mx-auto space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
+    <div className="p-6 lg:p-8 max-w-7xl mx-auto space-y-6 print:p-0">
+      {/* Header - Hidden on Print */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 print:hidden">
         <div>
-          <h2 className="text-3xl font-bold text-slate-900">My Schedule</h2>
-          <p className="text-slate-500 mt-1">Official assigned teaching schedule for 1st Semester 2024.</p>
+          <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight">My Teaching Schedule</h2>
+          <div className="flex items-center gap-2 mt-1">
+            <Badge variant="outline" className="bg-teal-50 text-teal-700 border-teal-100 font-bold">
+              {data?.activeSemester} Semester {data?.activeAcademicYear}-{data?.activeAcademicYear + 1}
+            </Badge>
+            <p className="text-slate-500 text-sm">Official Load for <span className="font-bold text-slate-700">{data?.fullName}</span></p>
+          </div>
         </div>
         <div className="flex gap-3">
-          <Button variant="outline" className="text-slate-700 bg-white shadow-sm border-slate-200">
+          <Button onClick={handlePrint} variant="outline" className="text-slate-700 bg-white shadow-sm border-slate-200">
+            <Printer className="w-4 h-4 mr-2" /> Print Schedule
+          </Button>
+          <Button className="bg-[#115e59] hover:bg-teal-900 text-white shadow-lg shadow-teal-900/10">
             <Download className="w-4 h-4 mr-2" /> Export PDF
           </Button>
-          <Button variant="outline" className="text-slate-700 bg-white shadow-sm border-slate-200">
-            <CalendarIcon className="w-4 h-4 mr-2" /> Sync to ICS
-          </Button>
+        </div>
+      </div>
+
+      {/* Official Header - Visible ONLY on Print */}
+      <div className="hidden print:block text-center border-b-2 border-slate-900 pb-6 mb-8">
+        <h1 className="text-2xl font-black uppercase tracking-tighter">University Faculty Schedule</h1>
+        <div className="flex justify-center gap-8 mt-4 text-sm font-bold">
+          <p>FACULTY: {data?.fullName?.toUpperCase()}</p>
+          <p>TERM: {data?.activeSemester?.toUpperCase()} SEMESTER {data?.activeAcademicYear}</p>
         </div>
       </div>
 
@@ -52,57 +153,142 @@ export default function FacultySchedule() {
         <Card className="border-dashed border-2 border-slate-200 bg-slate-50/50">
           <CardContent className="p-12 flex flex-col items-center justify-center text-center">
             <BookOpen className="h-12 w-12 text-slate-300 mb-4" />
-            <h3 className="text-lg font-semibold text-slate-900">No Assignments Yet</h3>
-            <p className="text-slate-500 max-w-xs mt-2">You haven't been assigned to any course sections for this semester.</p>
+            <h3 className="text-lg font-semibold text-slate-900">No Assignments Found</h3>
+            <p className="text-slate-500 max-w-xs mt-2">Your schedule hasn't been finalized in the system yet.</p>
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-4">
-          {data.sections.map(section => (
-            <Card key={section.id} className="border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
-              <CardContent className="p-6">
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <span className="font-bold text-teal-700 bg-teal-50 px-2 py-1 rounded text-xs">{section.courseCode}</span>
-                      <span className="text-xs font-bold text-slate-500 bg-slate-100 px-2 py-1 rounded">{section.sectionCode}</span>
-                    </div>
-                    <h3 className="font-bold text-xl text-slate-900">{section.courseTitle}</h3>
-                    <p className="text-sm text-slate-500 mt-1">{section.units} Units</p>
+        <Card className="border-slate-200 shadow-2xl overflow-hidden bg-white">
+          <CardContent className="p-0 overflow-x-auto">
+            <div className="min-w-[1000px] relative">
+              {/* Grid Header (Days) */}
+              <div className="grid grid-cols-[100px_repeat(5,1fr)] bg-slate-50 border-b border-slate-200 sticky top-0 z-20">
+                <div className="p-4 border-r border-slate-200"></div>
+                {daysOfWeek.map(day => (
+                  <div key={day} className="p-4 text-center border-r border-slate-200 last:border-0">
+                    <span className="text-sm font-black uppercase tracking-widest text-slate-900">{day}</span>
                   </div>
+                ))}
+              </div>
 
-                  <div className="flex flex-col gap-3 min-w-[250px]">
-                    {section.schedules.length > 0 ? (
-                      section.schedules.map((sch, idx) => (
-                        <div key={idx} className="bg-slate-50 border border-slate-100 p-3 rounded-lg">
-                          <div className="flex items-center gap-2 text-sm font-bold text-slate-700 mb-1">
-                            <CalendarIcon className="w-4 h-4 text-teal-600" />
-                            {sch.day}
-                          </div>
-                          <div className="flex items-center justify-between text-xs text-slate-500">
-                            <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5" /> {sch.time}</span>
-                            <span className="flex items-center gap-1 font-medium text-slate-700"><MapPin className="w-3.5 h-3.5 text-orange-500" /> {sch.room}</span>
-                          </div>
-                        </div>
-                      ))
-                    ) : (
-                      <div className="bg-orange-50 border border-orange-100 p-3 rounded-lg text-center">
-                        <p className="text-xs font-bold text-orange-700 italic">Schedule Pending</p>
-                      </div>
-                    )}
+              {/* Grid Body */}
+              <div className="relative grid grid-cols-[100px_repeat(5,1fr)]" style={{ gridTemplateRows: `repeat(${(endHour - startHour + 1) * 2}, 30px)` }}>
+                
+                {/* Time Labels & Horizontal Lines */}
+                {timeLabels.map((label, i) => (
+                  <div key={i} className="contents">
+                    <div 
+                      className="flex items-start justify-center pr-3 pt-1 text-[10px] font-black text-slate-400 uppercase bg-slate-50 border-r border-slate-200 sticky left-0 z-10"
+                      style={{ gridRow: `${i * 2 + 1} / span 2` }}
+                    >
+                      {label}
+                    </div>
+                    {/* Horizontal Line - Full width */}
+                    <div 
+                      className="col-start-2 col-span-5 border-b border-slate-100 pointer-events-none"
+                      style={{ gridRow: `${i * 2 + 1} / span 1` }}
+                    />
+                    <div 
+                      className="col-start-2 col-span-5 border-b border-slate-200/50 border-dashed pointer-events-none"
+                      style={{ gridRow: `${i * 2 + 2} / span 1` }}
+                    />
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                ))}
+
+                {/* Vertical Day Lines */}
+                {daysOfWeek.map((_, i) => (
+                  <div 
+                    key={i} 
+                    className="row-start-1 row-span-full border-r border-slate-200/50 pointer-events-none"
+                    style={{ gridColumnStart: i + 2 }}
+                  />
+                ))}
+
+                {/* Schedule Blocks */}
+                {scheduleItems.map((item) => {
+                  const dayIdx = daysOfWeek.indexOf(item.day)
+                  if (dayIdx === -1) return null
+                  
+                  return (
+                    <div
+                      key={item.id}
+                      className={`
+                        mx-1.5 my-1 p-3 rounded-lg border-l-4 shadow-sm transition-all hover:scale-[1.02] hover:shadow-md hover:z-30 cursor-default
+                        flex flex-col gap-1 overflow-hidden group
+                        ${item.colorClass}
+                      `}
+                      style={{
+                        gridRow: `${item.rowStart} / span ${item.rowSpan}`,
+                        gridColumnStart: dayIdx + 2
+                      }}
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-[10px] font-black uppercase tracking-tighter opacity-70">{item.sectionCode}</span>
+                        <Clock className="w-3 h-3 opacity-40 group-hover:opacity-100 transition-opacity" />
+                      </div>
+                      
+                      <h4 className="font-black text-xs leading-tight tracking-tight uppercase line-clamp-2">
+                        {item.courseCode}: {item.courseTitle}
+                      </h4>
+                      
+                      <div className="mt-auto space-y-1">
+                        <div className="flex items-center gap-1.5 text-[9px] font-bold">
+                          <MapPin className="w-2.5 h-2.5 text-teal-600" />
+                          <span>{item.room || "TBA"}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5 text-[9px] font-bold opacity-60">
+                          <CalendarIcon className="w-2.5 h-2.5" />
+                          <span>{item.time}</span>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Legend / Info Footer */}
+      {data?.sections?.length > 0 && (
+        <div className="flex flex-wrap items-center gap-6 p-4 bg-slate-50 border border-slate-200 rounded-xl print:hidden">
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 bg-[#115e59] rounded-full"></div>
+            <span className="text-xs font-bold text-slate-600">Total Units: {data.sections.reduce((acc, s) => acc + s.units, 0)}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 bg-teal-400 rounded-full"></div>
+            <span className="text-xs font-bold text-slate-600">Assignments: {data.sections.length} Course Sections</span>
+          </div>
+          <p className="text-[10px] text-slate-400 italic ml-auto uppercase tracking-widest font-bold">Generated on {new Date().toLocaleDateString()} at {new Date().toLocaleTimeString()}</p>
         </div>
       )}
-    </div>
-  )
-}
 
-function Clock({ className }) {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      <style jsx>{`
+        @media print {
+          .print\:p-0 { padding: 0 !important; }
+          .print\:hidden { display: none !important; }
+          .print\:block { display: block !important; }
+          body { background: white !important; }
+          .shadow-2xl { shadow: none !important; }
+          .border-slate-200 { border-color: #000 !important; }
+          @page { margin: 1cm; }
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar {
+          height: 6px;
+          width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: #f1f5f9;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: #cbd5e1;
+          border-radius: 10px;
+        }
+      `}</style>
+    </div>
   )
 }

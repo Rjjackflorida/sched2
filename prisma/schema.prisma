@@ -178,3 +178,16 @@ model SectionSchedule {
   @@unique([sectionId, dayOfWeek, startTime, endTime])
   @@map("section_schedules")
 }
+
+/**
+ * SystemSetting manages global configuration like the active academic term.
+ * Singleton pattern: Only one record exists with id "global".
+ */
+model SystemSetting {
+  id                 String   @id @default("global") // Singleton ID
+  activeSemester     String   @default("1st") @map("active_semester")
+  activeAcademicYear Int      @default(2024) @map("active_academic_year")
+  updatedAt          DateTime @default(now()) @updatedAt @map("updated_at")
+
+  @@map("system_settings")
+}

@@ -12,6 +12,7 @@ import { getCourses, createCourse, updateCourse, deleteCourse } from "@/app/acti
 import { getCourseSections, createCourseSection, updateCourseSection, deleteCourseSection } from "@/app/actions/section"
 import { getFacultyRoster, updateFacultyProfile, deleteFacultyProfile } from "@/app/actions/faculty"
 import { getPrograms, createProgram, createSection, deleteProgram, deleteSection } from "@/app/actions/program"
+import { getSystemSettings } from "@/app/actions/settings"
 
 /**
  * Shared Constant Data
@@ -78,7 +79,45 @@ export default function ResourceManagementPage() {
   const [formError, setFormError] = useState(null)
 
   useEffect(() => {
-    loadAllData()
+    const init = async () => {
+      setIsLoading(true)
+      const settingsRes = await getSystemSettings()
+      if (settingsRes.success && settingsRes.settings) {
+        setFacultySemester(settingsRes.settings.activeSemester)
+        setFacultyAcademicYear(settingsRes.settings.activeAcademicYear.toString())
+        
+        // Initialize form data with global settings
+        setAssignmentFormData(prev => ({
+          ...prev,
+          semester: settingsRes.settings.activeSemester,
+          academicYear: settingsRes.settings.activeAcademicYear.toString()
+        }))
+        setEditAssignmentFormData(prev => ({
+          ...prev,
+          semester: settingsRes.settings.activeSemester,
+          academicYear: settingsRes.settings.activeAcademicYear.toString()
+        }))
+
+        // Load data with the active settings
+        const [roomsRes, coursesRes, assignRes, rosterRes, programsRes] = await Promise.all([
+          getRooms(),
+          getCourses(),
+          getCourseSections(),
+          getFacultyRoster(settingsRes.settings.activeSemester, settingsRes.settings.activeAcademicYear.toString()),
+          getPrograms()
+        ])
+        
+        if (roomsRes.success) setRooms(roomsRes.rooms)
+        if (coursesRes.success) setCourses(coursesRes.courses)
+        if (assignRes.success) setAssignments(assignRes.sections)
+        if (rosterRes.success) setRoster(rosterRes.roster)
+        if (programsRes.success) setPrograms(programsRes.programs)
+      } else {
+        await loadAllData()
+      }
+      setIsLoading(false)
+    }
+    init()
   }, [])
 
   useEffect(() => {
@@ -566,7 +605,7 @@ export default function ResourceManagementPage() {
               {formError && <div className="p-3 bg-red-50 border border-red-100 rounded-md text-sm text-red-600 font-medium">{formError}</div>}
               <div className="space-y-1"><label className="text-xs font-semibold text-slate-600 uppercase">Room Type *</label><select required value={roomFormData.type} onChange={(e) => handleRoomTypeChange(e)} className="w-full px-3 py-2 border rounded-md text-sm"><option value="">Select Room Type</option>{ROOM_TYPES.map(t => <option key={t.label} value={t.label}>{t.label} ({t.capacity} cap.)</option>)}</select></div>
               <div className="space-y-1"><label className="text-xs font-semibold text-slate-600 uppercase">Capacity</label><input type="text" readOnly value={roomFormData.capacity} placeholder="Auto-calculated" className="w-full px-3 py-2 bg-slate-50 border rounded-md text-sm text-slate-500 font-bold" /></div>
-              <div className="space-y-1"><label className="text-xs font-semibold text-slate-600 uppercase">Building *</label><select required value={roomFormData.building} onChange={(e) => setRoomFormData({...roomFormData, building: e.target.value})} className="w-full px-3 py-2 border rounded-md text-sm">{BUILDINGS.map(b => <option key={b} value={b}>{b}</option>)}</select></div>
+              <div className="space-y-1"><label className="text-xs font-semibold text-slate-600 uppercase">Building *</label><select required value={roomFormData.building} onChange={(e) => setRoomFormData({...roomFormData, building: e.target.value})} className="w-full px-3 py-2 border rounded-md text-sm"><option value="">Select Building</option>{BUILDINGS.map(b => <option key={b} value={b}>{b}</option>)}</select></div>
               <div className="space-y-1"><label className="text-xs font-semibold text-slate-600 uppercase">Room Number *</label><input type="number" required max="99999" value={roomFormData.roomNumber} onChange={(e) => setRoomFormData({...roomFormData, roomNumber: e.target.value})} className="w-full px-3 py-2 border rounded-md text-sm" /></div>
               <div className="pt-4 flex justify-end gap-3 border-t"><Button type="button" variant="outline" onClick={() => setIsRoomModalOpen(false)} disabled={isSubmitting}>Cancel</Button><Button type="submit" className="bg-[#115e59] hover:bg-teal-900 text-white" disabled={isSubmitting}>{isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Create Room"}</Button></div>
             </form>
@@ -584,7 +623,7 @@ export default function ResourceManagementPage() {
               {!isConfirmingDelete ? (
                 <><div className="space-y-1"><label className="text-xs font-semibold text-slate-600 uppercase">Room Name (Preview)</label><div className="px-3 py-2 bg-slate-50 border rounded-md text-sm text-teal-700 font-bold font-mono">{selectedRoom?.name}</div></div>
                 <div className="space-y-1"><label className="text-xs font-semibold text-slate-600 uppercase">Room Type *</label><select required value={editRoomFormData.type} onChange={(e) => handleRoomTypeChange(e, true)} className="w-full px-3 py-2 border rounded-md text-sm">{ROOM_TYPES.map(t => <option key={t.label} value={t.label}>{t.label} ({t.capacity} cap.)</option>)}</select></div>
-                <div className="space-y-1"><label className="text-xs font-semibold text-slate-600 uppercase">Building *</label><select required value={editRoomFormData.building} onChange={(e) => setEditRoomFormData({...editRoomFormData, building: e.target.value})} className="w-full px-3 py-2 border rounded-md text-sm">{BUILDINGS.map(b => <option key={b} value={b}>{b}</option>)}</select></div>
+                <div className="space-y-1"><label className="text-xs font-semibold text-slate-600 uppercase">Building *</label><select required value={editRoomFormData.building} onChange={(e) => setEditRoomFormData({...editRoomFormData, building: e.target.value})} className="w-full px-3 py-2 border rounded-md text-sm"><option value="">Select Building</option>{BUILDINGS.map(b => <option key={b} value={b}>{b}</option>)}</select></div>
                 <div className="space-y-1"><label className="text-xs font-semibold text-slate-600 uppercase">Room Number *</label><input type="number" required max="99999" value={editRoomFormData.roomNumber} onChange={(e) => setEditRoomFormData({...editRoomFormData, roomNumber: e.target.value})} className="w-full px-3 py-2 border rounded-md text-sm" /></div>
                 <div className="pt-6 border-t flex justify-end gap-3"><Button type="button" variant="outline" onClick={() => setIsEditRoomModalOpen(false)} disabled={isSubmitting}>Cancel</Button><Button type="submit" className="bg-[#115e59] hover:bg-teal-900 text-white" disabled={isSubmitting}>{isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save Changes"}</Button></div></>
               ) : (

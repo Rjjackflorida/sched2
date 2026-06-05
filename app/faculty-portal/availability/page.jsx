@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge"
 import { Loader2, Save, RotateCcw, AlertCircle, CheckCircle2, Calendar } from "lucide-react"
 import { saveFacultyAvailability, getFacultyAvailability } from "@/app/actions/faculty"
 import { getUserId } from "@/app/actions/auth"
+import { getSystemSettings } from "@/app/actions/settings"
 
 const daysOfWeek = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]
 
@@ -32,50 +33,102 @@ const format12Hour = (timeStr) => {
 
 export default function FacultyAvailability() {
   // Metadata States
-  const [academicYear, setAcademicYear] = useState(new Date().getFullYear())
-  const [semester, setSemester] = useState("1st Semester")
+  const [academicYear, setAcademicYear] = useState(2024)
+  const [semester, setSemester] = useState("1st")
   const [userId, setUserId] = useState(null)
 
   // Availability States
   const [isRecurring, setIsRecurring] = useState(true)
   const [unavailableBlocks, setUnavailableBlocks] = useState(new Set())
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
   
+  // Drag-and-Drop Selection States
+  const [isDragging, setIsDragging] = useState(false)
+  const [dragMode, setDragMode] = useState(null) // 'add' | 'remove'
+
   // UI States
   const [isLoading, setIsLoading] = useState(true)
+  const [isSettingsLoading, setIsSettingsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [message, setMessage] = useState(null) // { type: 'success' | 'error', text: string }
 
-  // 1. Initial Load: Get User ID
+  // 1. Initial Load: Get User ID and Global Settings
   useEffect(() => {
     const init = async () => {
-      const id = await getUserId()
-      setUserId(id)
+      const [userRes, settingsRes] = await Promise.all([
+        getUserId(),
+        getSystemSettings()
+      ])
+      
+      setUserId(userRes)
+      
+      if (settingsRes.success && settingsRes.settings) {
+        setAcademicYear(settingsRes.settings.activeAcademicYear)
+        setSemester(settingsRes.settings.activeSemester)
+      }
+      setIsSettingsLoading(false)
     }
     init()
   }, [])
 
-  // 2. Data Load: Fetch existing availability when userId, year, or sem changes
+  // 2. Unsaved Changes Warning
   useEffect(() => {
-    if (!userId) return
+    const handleBeforeUnload = (e) => {
+      if (hasUnsavedChanges) {
+        e.preventDefault()
+        e.returnValue = ''
+      }
+    }
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload)
+  }, [hasUnsavedChanges])
+
+  // 3. Data Load: Fetch existing availability when userId, year, or sem changes
+  useEffect(() => {
+    if (!userId || isSettingsLoading) return
 
     const loadData = async () => {
       setIsLoading(true)
       const res = await getFacultyAvailability(userId, semester, academicYear)
       if (res.success) {
         setUnavailableBlocks(new Set(res.blocks))
+      } else {
+        setUnavailableBlocks(new Set())
       }
+      setHasUnsavedChanges(false)
       setIsLoading(false)
     }
     loadData()
-  }, [userId, semester, academicYear])
+  }, [userId, semester, academicYear, isSettingsLoading])
 
-  const toggleBlock = (day, time) => {
+  // --- Interaction Handlers ---
+
+  const startDragging = (day, time) => {
     const key = `${day}-${time}`
+    const mode = unavailableBlocks.has(key) ? 'remove' : 'add'
+    setDragMode(mode)
+    setIsDragging(true)
+    handleBlockAction(key, mode)
+  }
+
+  const handleMouseEnter = (day, time) => {
+    if (!isDragging) return
+    handleBlockAction(`${day}-${time}`, dragMode)
+  }
+
+  const stopDragging = () => {
+    setIsDragging(false)
+    setDragMode(null)
+  }
+
+  const handleBlockAction = (key, mode) => {
     const newBlocks = new Set(unavailableBlocks)
-    if (newBlocks.has(key)) newBlocks.delete(key)
-    else newBlocks.add(key)
+    if (mode === 'add') newBlocks.add(key)
+    else newBlocks.delete(key)
+    
     setUnavailableBlocks(newBlocks)
-    setMessage(null) // Clear messages when user interacts
+    setHasUnsavedChanges(true)
+    setMessage(null)
   }
 
   const toggleDay = (day) => {
@@ -85,7 +138,46 @@ export default function FacultyAvailability() {
     if (allBlocked) daySlots.forEach(slot => newBlocks.delete(slot))
     else daySlots.forEach(slot => newBlocks.add(slot))
     setUnavailableBlocks(newBlocks)
+    setHasUnsavedChanges(true)
     setMessage(null)
+  }
+
+  const quickToggleRange = (type) => {
+    const newBlocks = new Set(unavailableBlocks)
+    daysOfWeek.forEach(day => {
+      timeSlots.forEach(time => {
+        const hour = parseInt(time.split(':')[0], 10)
+        const isMorning = hour < 12
+        const key = `${day}-${time}`
+        
+        if (type === 'morning' && isMorning) newBlocks.add(key)
+        if (type === 'afternoon' && !isMorning) newBlocks.add(key)
+      })
+    })
+    setUnavailableBlocks(newBlocks)
+    setHasUnsavedChanges(true)
+  }
+
+  const handleCopyPrevious = async () => {
+    if (!userId) return
+    setIsLoading(true)
+    // Find what the "previous" semester would be
+    const prevSem = semester === "2nd" ? "1st" : semester === "Summer" ? "2nd" : null
+    if (!prevSem) {
+      setMessage({ type: 'error', text: "No previous semester data found for 1st Semester." })
+      setIsLoading(false)
+      return
+    }
+
+    const res = await getFacultyAvailability(userId, prevSem, academicYear)
+    if (res.success && res.blocks.length > 0) {
+      setUnavailableBlocks(new Set(res.blocks))
+      setHasUnsavedChanges(true)
+      setMessage({ type: 'success', text: `Copied data from ${prevSem} Semester!` })
+    } else {
+      setMessage({ type: 'error', text: `No saved data found for ${prevSem} Semester.` })
+    }
+    setIsLoading(false)
   }
 
   const handleSave = async () => {
@@ -100,6 +192,7 @@ export default function FacultyAvailability() {
 
     if (res.success) {
       setMessage({ type: 'success', text: "Your availability has been saved successfully!" })
+      setHasUnsavedChanges(false)
     } else {
       setMessage({ type: 'error', text: res.error || "Failed to save availability." })
     }
@@ -107,12 +200,19 @@ export default function FacultyAvailability() {
   }
 
   const handleReset = () => {
-    setUnavailableBlocks(new Set())
-    setMessage(null)
+    if (confirm("Are you sure you want to clear the entire grid?")) {
+      setUnavailableBlocks(new Set())
+      setHasUnsavedChanges(true)
+      setMessage(null)
+    }
   }
 
   return (
-    <div className="p-6 lg:p-8 max-w-6xl mx-auto space-y-6">
+    <div 
+      className="p-6 lg:p-8 max-w-6xl mx-auto space-y-6 select-none"
+      onMouseUp={stopDragging}
+      onMouseLeave={stopDragging}
+    >
       {/* Header Section */}
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
         <div>
@@ -120,28 +220,46 @@ export default function FacultyAvailability() {
           <p className="text-slate-500 mt-1">Select the time blocks when you are <span className="font-bold text-red-600">unavailable</span> to teach.</p>
         </div>
 
-        {/* Period Selectors */}
-        <div className="flex flex-wrap items-center gap-3 bg-white p-2 rounded-xl border border-slate-200 shadow-sm">
-          <div className="flex items-center gap-2 px-3 border-r border-slate-100">
-            <Calendar className="h-4 w-4 text-teal-600" />
-            <select 
-              value={academicYear} 
-              onChange={(e) => setAcademicYear(parseInt(e.target.value))}
-              className="text-sm font-bold text-slate-700 focus:outline-none bg-transparent"
+        <div className="flex flex-wrap items-center gap-4">
+          {/* Quick Actions */}
+          <div className="flex gap-2">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handleCopyPrevious}
+              className="text-xs h-9 border-teal-200 text-teal-700 hover:bg-teal-50"
+              disabled={isLoading || semester === "1st"}
             >
-              <option value={2025}>A.Y. 2025-2026</option>
-              <option value={2026}>A.Y. 2026-2027</option>
+              <RotateCcw className="h-3.5 w-3.5 mr-1.5" /> Copy Previous Term
+            </Button>
+          </div>
+
+          {/* Period Selectors */}
+          <div className="flex flex-wrap items-center gap-3 bg-white p-2 rounded-xl border border-slate-200 shadow-sm">
+            <div className="flex items-center gap-2 px-3 border-r border-slate-100">
+              <Calendar className="h-4 w-4 text-teal-600" />
+              <select 
+                value={academicYear} 
+                onChange={(e) => setAcademicYear(parseInt(e.target.value))}
+                disabled={isSettingsLoading}
+                className="text-sm font-bold text-slate-700 focus:outline-none bg-transparent disabled:opacity-50"
+              >
+                <option value={academicYear}>{`A.Y. ${academicYear}-${academicYear + 1}`}</option>
+                <option value={academicYear - 1}>{`A.Y. ${academicYear - 1}-${academicYear}`}</option>
+                <option value={academicYear + 1}>{`A.Y. ${academicYear + 1}-${academicYear + 2}`}</option>
+              </select>
+            </div>
+            <select 
+              value={semester} 
+              onChange={(e) => setSemester(e.target.value)}
+              disabled={isSettingsLoading}
+              className="text-sm font-bold text-slate-700 px-3 focus:outline-none bg-transparent disabled:opacity-50"
+            >
+              <option value="1st">1st Semester</option>
+              <option value="2nd">2nd Semester</option>
+              <option value="Summer">Summer</option>
             </select>
           </div>
-          <select 
-            value={semester} 
-            onChange={(e) => setSemester(e.target.value)}
-            className="text-sm font-bold text-slate-700 px-3 focus:outline-none bg-transparent"
-          >
-            <option value="1st Semester">1st Semester</option>
-            <option value="2nd Semester">2nd Semester</option>
-            <option value="Summer">Summer</option>
-          </select>
         </div>
       </div>
 
@@ -156,14 +274,21 @@ export default function FacultyAvailability() {
       {/* Interactive Calendar Card */}
       <Card className="border-slate-200 shadow-xl overflow-hidden">
         <CardHeader className="border-b border-slate-100 bg-white pb-4">
-          <div className="flex justify-between items-center">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div>
               <CardTitle className="text-lg">Weekly Schedule Grid</CardTitle>
-              <CardDescription>Click slots to block, or click Day Name to toggle whole day.</CardDescription>
+              <CardDescription>Click and Drag to "paint" your schedule. Click Day Name to toggle whole day.</CardDescription>
             </div>
-            <div className="flex items-center gap-4 text-[10px] font-black uppercase tracking-widest">
-              <div className="flex items-center gap-1.5"><div className="w-3 h-3 bg-teal-50 border border-teal-200 rounded-sm"></div> Available</div>
-              <div className="flex items-center gap-1.5"><div className="w-3 h-3 bg-slate-200 border border-slate-300 rounded-sm diagonal-stripes"></div> Unavailable</div>
+            
+            <div className="flex flex-wrap items-center gap-4">
+              <div className="flex gap-2 mr-4 border-r pr-4 border-slate-200">
+                <Button variant="ghost" size="sm" onClick={() => quickToggleRange('morning')} className="text-[10px] font-bold uppercase h-7 px-2 hover:bg-teal-50 hover:text-teal-700">Block Mornings</Button>
+                <Button variant="ghost" size="sm" onClick={() => quickToggleRange('afternoon')} className="text-[10px] font-bold uppercase h-7 px-2 hover:bg-teal-50 hover:text-teal-700">Block Afternoons</Button>
+              </div>
+              <div className="flex items-center gap-4 text-[10px] font-black uppercase tracking-widest">
+                <div className="flex items-center gap-1.5"><div className="w-3 h-3 bg-teal-50 border border-teal-200 rounded-sm"></div> Available</div>
+                <div className="flex items-center gap-1.5"><div className="w-3 h-3 bg-slate-200 border border-slate-300 rounded-sm diagonal-stripes"></div> Unavailable</div>
+              </div>
             </div>
           </div>
         </CardHeader>
@@ -202,7 +327,8 @@ export default function FacultyAvailability() {
                     return (
                       <div 
                         key={`${day}-${time}`} 
-                        onClick={() => toggleBlock(day, time)}
+                        onMouseDown={() => startDragging(day, time)}
+                        onMouseEnter={() => handleMouseEnter(day, time)}
                         className={`
                           border-r border-slate-200 cursor-pointer transition-all duration-75
                           ${isBlocked ? 'bg-slate-200/90 diagonal-stripes border-slate-300 shadow-inner' : 'bg-teal-50/5 hover:bg-teal-500/20'}
@@ -225,9 +351,16 @@ export default function FacultyAvailability() {
       
       {/* Footer Actions */}
       <div className="flex flex-col sm:flex-row justify-between items-center gap-4 pt-4 border-t border-slate-100">
-        <p className="text-xs text-slate-400 font-medium italic">
-          Selected: <span className="text-slate-900 font-bold">{unavailableBlocks.size}</span> half-hour blocks.
-        </p>
+        <div className="flex items-center gap-4">
+          <p className="text-xs text-slate-400 font-medium italic">
+            Selected: <span className="text-slate-900 font-bold">{unavailableBlocks.size}</span> half-hour blocks.
+          </p>
+          {hasUnsavedChanges && (
+            <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200 animate-pulse">
+              Unsaved Changes
+            </Badge>
+          )}
+        </div>
         <div className="flex gap-3 w-full sm:w-auto">
           <Button 
             variant="outline" 
@@ -239,8 +372,8 @@ export default function FacultyAvailability() {
           </Button>
           <Button 
             onClick={handleSave}
-            disabled={isSubmitting || isLoading}
-            className="flex-1 sm:flex-none bg-[#115e59] hover:bg-teal-900 text-white shadow-lg shadow-teal-900/10"
+            disabled={isSubmitting || isLoading || !hasUnsavedChanges}
+            className={`flex-1 sm:flex-none text-white shadow-lg ${hasUnsavedChanges ? 'bg-[#115e59] hover:bg-teal-900 shadow-teal-900/10' : 'bg-slate-400 cursor-not-allowed'}`}
           >
             {isSubmitting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
             Save Availability

@@ -7,6 +7,7 @@ import { AlertCircle, Clock, CheckCircle2, BookOpen, Loader2 } from "lucide-reac
 import { Button } from "@/components/ui/button"
 import { getUserId } from "@/app/actions/auth"
 import { getFacultyProfileData } from "@/app/actions/faculty"
+import { getSystemSettings } from "@/app/actions/settings"
 import Link from "next/link"
 
 export default function FacultyDashboard() {
@@ -17,8 +18,14 @@ export default function FacultyDashboard() {
     async function loadData() {
       const userId = await getUserId();
       if (userId) {
-        const res = await getFacultyProfileData(userId, "1st", "2024");
-        if (res.success) setData(res.data);
+        const settingsRes = await getSystemSettings();
+        if (settingsRes.success && settingsRes.settings) {
+          const { activeSemester, activeAcademicYear } = settingsRes.settings;
+          const res = await getFacultyProfileData(userId, activeSemester, activeAcademicYear.toString());
+          if (res.success) {
+            setData({ ...res.data, activeSemester, activeAcademicYear });
+          }
+        }
       }
       setIsLoading(false);
     }
@@ -37,7 +44,9 @@ export default function FacultyDashboard() {
     <div className="p-6 lg:p-8 max-w-6xl mx-auto space-y-8">
       <div>
         <h2 className="text-3xl font-bold text-slate-900">Welcome Back, {data?.fullName || "Faculty"}</h2>
-        <p className="text-slate-500 mt-1">Here is your current academic overview for 1st Semester 2024.</p>
+        <p className="text-slate-500 mt-1">
+          Here is your current academic overview for {data?.activeSemester || "1st"} Semester {data?.activeAcademicYear || 2024}.
+        </p>
       </div>
 
       {!data?.maxUnits && (

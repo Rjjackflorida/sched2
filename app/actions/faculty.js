@@ -1,6 +1,7 @@
 "use server"
 
 import { prisma } from "@/lib/prisma"
+import { getSystemSettings } from "@/app/actions/settings"
 
 /**
  * Fetches all users with the 'faculty' role and their associated profiles.
@@ -8,6 +9,17 @@ import { prisma } from "@/lib/prisma"
  */
 export async function getFacultyRoster(semester, academicYear) {
   try {
+    let filterSemester = semester;
+    let filterAcademicYear = academicYear;
+
+    if (!filterSemester || !filterAcademicYear) {
+      const settingsRes = await getSystemSettings();
+      if (settingsRes.success && settingsRes.settings) {
+        filterSemester = filterSemester || settingsRes.settings.activeSemester;
+        filterAcademicYear = filterAcademicYear || settingsRes.settings.activeAcademicYear.toString();
+      }
+    }
+
     // Fetch users filtered by role 'faculty'
     const users = await prisma.user.findMany({
       where: { role: "faculty" },
@@ -16,14 +28,19 @@ export async function getFacultyRoster(semester, academicYear) {
           include: {
             sections: {
               where: {
-                ...(semester && { semester }),
-                ...(academicYear && { academicYear: parseInt(academicYear, 10) })
+                ...(filterSemester && { semester: filterSemester }),
+                ...(filterAcademicYear && { academicYear: parseInt(filterAcademicYear, 10) })
               },
               include: {
                 course: true
               }
             },
-            availabilities: true
+            availabilities: {
+              where: {
+                ...(filterSemester && { semester: filterSemester }),
+                ...(filterAcademicYear && { academicYear: parseInt(filterAcademicYear, 10) })
+              }
+            }
           }
         }
       },
@@ -293,6 +310,8 @@ export async function getFacultyProfileData(userId, semester, academicYear) {
           units: s.course.units,
           schedules: s.schedules.map(sch => ({
             day: sch.dayOfWeek,
+            startTime: sch.startTime,
+            endTime: sch.endTime,
             time: `${formatTime(sch.startTime)} - ${formatTime(sch.endTime)}`,
             room: sch.room ? `${sch.room.building} - ${sch.room.roomNumber}` : "TBA"
           }))

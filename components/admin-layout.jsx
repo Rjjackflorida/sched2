@@ -43,6 +43,7 @@ export function AdminLayout({ children, title }) {
     { name: "User Management", href: "/user-management", icon: UserCog },
     { name: "Schedule Builder", href: "/schedule-builder", icon: Calendar },
     { name: "Reports & Exports", href: "/reports", icon: FileText },
+    { name: "Global Settings", href: "/settings", icon: Settings },
   ]
 
   return (
