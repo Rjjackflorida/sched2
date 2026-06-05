@@ -8,10 +8,10 @@ import { Badge } from "@/components/ui/badge"
 import { 
   MapPin, Monitor, Library, Search, Plus, X, Loader2, Building2, 
   Users, BookOpen, Edit2, Trash2, AlertCircle, Briefcase, 
-  BarChart3, Clock, UserCheck, Building, Calendar as CalendarIcon, Save 
+  BarChart3, Clock, UserCheck, Building, Calendar as CalendarIcon, Save, Printer
 } from "lucide-react"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { getRooms, createRoom, updateRoom, deleteRoom } from "@/app/actions/room"
+import { getRooms, createRoom, updateRoom, deleteRoom, getRoomScheduleData } from "@/app/actions/room"
 import { getCourses, createCourse, updateCourse, deleteCourse } from "@/app/actions/course"
 import { getCourseSections, createCourseSection, updateCourseSection, deleteCourseSection } from "@/app/actions/section"
 import { getFacultyRoster, updateFacultyProfile, deleteFacultyProfile } from "@/app/actions/faculty"
@@ -27,6 +27,46 @@ const ROOM_TYPES = [
   { label: "AVR (Audio-Visual Room)", capacity: 60 },
   { label: "MPH (Multi-Purpose Hall)", capacity: 100 },
   { label: "Normal Room", capacity: 50 },
+]
+
+// --- CALENDAR GRID HELPERS ---
+const daysOfWeek = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
+const startHour = 7
+const endHour = 21
+
+const generateTimeLabels = () => {
+  const labels = []
+  for (let hour = startHour; hour <= endHour; hour++) {
+    const period = hour >= 12 ? 'PM' : 'AM'
+    const displayHour = hour % 12 || 12
+    labels.push(`${displayHour}:00 ${period}`)
+  }
+  return labels
+}
+
+const getRowIndex = (dateString) => {
+  const date = new Date(dateString)
+  const hours = date.getUTCHours()
+  const minutes = date.getUTCMinutes()
+  const totalMinutesFromStart = (hours - startHour) * 60 + minutes
+  return Math.floor(totalMinutesFromStart / 30) + 1
+}
+
+const getRowSpan = (startString, endString) => {
+  const start = new Date(startString)
+  const end = new Date(endString)
+  const diffMs = end.getTime() - start.getTime()
+  const diffMins = diffMs / (1000 * 60)
+  return Math.floor(diffMins / 30)
+}
+
+const colorSchemes = [
+  "bg-teal-50 border-teal-200 text-teal-900 shadow-teal-100/50",
+  "bg-blue-50 border-blue-200 text-blue-900 shadow-blue-100/50",
+  "bg-indigo-50 border-indigo-200 text-indigo-900 shadow-indigo-100/50",
+  "bg-slate-50 border-slate-200 text-slate-900 shadow-slate-100/50",
+  "bg-cyan-50 border-cyan-200 text-cyan-900 shadow-cyan-100/50",
+  "bg-emerald-50 border-emerald-200 text-emerald-900 shadow-emerald-100/50",
 ]
 
 const BUILDINGS = [
@@ -78,6 +118,8 @@ export default function ResourceManagementPage() {
   const [editingFaculty, setEditingFaculty] = useState(null)
   const [selectedAssignment, setSelectedAssignment] = useState(null)
   const [formError, setFormError] = useState(null)
+  const [viewingRoomSchedule, setViewingRoomSchedule] = useState(null)
+  const [isLoadingRoomSchedule, setIsLoadingRoomSchedule] = useState(false)
 
   useEffect(() => {
     const init = async () => {
@@ -192,6 +234,19 @@ export default function ResourceManagementPage() {
       capacity: room.capacity
     })
     setIsEditRoomModalOpen(true)
+  }
+
+  const handleViewRoomScheduleClick = async (room) => {
+    setIsLoadingRoomSchedule(true)
+    setViewingRoomSchedule({ roomName: room.name, isLoading: true })
+    const res = await getRoomScheduleData(room.id)
+    if (res.success) {
+      setViewingRoomSchedule(res)
+    } else {
+      setFormError(res.error)
+      setViewingRoomSchedule(null)
+    }
+    setIsLoadingRoomSchedule(false)
   }
 
   const handleUpdateRoomSubmit = async (e) => {
@@ -512,8 +567,9 @@ export default function ResourceManagementPage() {
                               </td>
                               <td className="px-6 py-4 text-right">
                                 <div className="flex justify-end gap-1">
-                                  <button onClick={() => handleEditRoomClick(room)} className="p-2 text-slate-400 hover:text-teal-600 hover:bg-teal-50 rounded-lg transition-all"><Edit2 className="h-4 w-4" /></button>
-                                  <button onClick={() => setDeleteTarget({ type: 'room', id: room.id, name: room.name })} className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"><Trash2 className="h-4 w-4" /></button>
+                                  <button onClick={() => handleViewRoomScheduleClick(room)} className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all" title="View Schedule"><Clock className="h-4 w-4" /></button>
+                                  <button onClick={() => handleEditRoomClick(room)} className="p-2 text-slate-400 hover:text-teal-600 hover:bg-teal-50 rounded-lg transition-all" title="Edit"><Edit2 className="h-4 w-4" /></button>
+                                  <button onClick={() => setDeleteTarget({ type: 'room', id: room.id, name: room.name })} className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all" title="Delete"><Trash2 className="h-4 w-4" /></button>
                                 </div>
                               </td>
                             </tr>
@@ -1257,6 +1313,127 @@ export default function ResourceManagementPage() {
                 </Button>
               </div>
               {formError && <p className="mt-4 text-xs font-bold text-red-600 animate-pulse">{formError}</p>}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ROOM SCHEDULE MODAL */}
+      {viewingRoomSchedule && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-slate-50 w-full max-w-7xl h-[90vh] rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200">
+            {/* Header */}
+            <div className="bg-white border-b border-slate-200 px-6 py-4 flex justify-between items-center sticky top-0 z-50 print:hidden">
+              <div>
+                <h3 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+                  <Clock className="w-5 h-5 text-teal-600" />
+                  Room Schedule: {viewingRoomSchedule.roomName}
+                </h3>
+                {!viewingRoomSchedule.isLoading && (
+                  <p className="text-sm font-semibold text-slate-500 uppercase tracking-widest mt-1">
+                    {viewingRoomSchedule.activeSemester} Semester {viewingRoomSchedule.activeAcademicYear}
+                  </p>
+                )}
+              </div>
+              <div className="flex items-center gap-3">
+                <Button 
+                  onClick={() => {
+                    window.print()
+                  }}
+                  variant="outline" 
+                  className="hidden md:flex border-slate-200 text-slate-700 bg-white shadow-sm font-semibold hover:bg-slate-50"
+                  disabled={viewingRoomSchedule.isLoading || !viewingRoomSchedule.schedules?.length}
+                >
+                  <Printer className="w-4 h-4 mr-2" /> Print Schedule
+                </Button>
+                <button onClick={() => setViewingRoomSchedule(null)} className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors">
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Content Body */}
+            <div className="flex-1 overflow-auto p-6 custom-scrollbar print:p-0 print:overflow-visible">
+              <div className="hidden print:block text-center border-b-2 border-slate-900 pb-6 mb-8">
+                <h1 className="text-2xl font-bold uppercase tracking-tighter">Room Schedule: {viewingRoomSchedule.roomName}</h1>
+                <div className="flex justify-center gap-8 mt-4 text-sm font-bold">
+                  <p>TERM: {viewingRoomSchedule.activeSemester?.toUpperCase()} SEMESTER {viewingRoomSchedule.activeAcademicYear}</p>
+                </div>
+              </div>
+
+              {viewingRoomSchedule.isLoading ? (
+                <div className="flex flex-col items-center justify-center h-full text-slate-400 print:hidden">
+                  <Loader2 className="w-8 h-8 animate-spin mb-4" />
+                  <p className="text-sm font-bold uppercase tracking-widest">Loading Schedule...</p>
+                </div>
+              ) : viewingRoomSchedule.schedules?.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-full text-slate-400 bg-white border-2 border-dashed border-slate-200 rounded-xl m-8 print:hidden">
+                  <BookOpen className="w-12 h-12 mb-4 text-slate-300" />
+                  <p className="text-lg font-bold text-slate-900">No Classes Scheduled</p>
+                  <p className="text-sm">There are no sections assigned to this room for the active term.</p>
+                </div>
+              ) : (
+                <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden min-w-[1000px] print:shadow-none print:border-black">
+                  {/* Grid Header (Days) */}
+                  <div className="grid grid-cols-[100px_repeat(6,1fr)] bg-slate-50 border-b border-slate-200 sticky top-0 z-20 print:bg-transparent print:border-black">
+                    <div className="p-4 border-r border-slate-200 print:border-black"></div>
+                    {daysOfWeek.map(day => (
+                      <div key={day} className="p-4 text-center border-r border-slate-200 last:border-0 print:border-black">
+                        <span className="text-sm font-semibold uppercase tracking-widest text-slate-900">{day}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Grid Body */}
+                  <div className="relative grid grid-cols-[100px_repeat(6,1fr)]" style={{ gridTemplateRows: `repeat(${(endHour - startHour + 1) * 2}, 30px)` }}>
+                    {generateTimeLabels().map((label, i) => (
+                      <div key={i} className="contents">
+                        <div className="flex items-start justify-center pr-3 pt-1 text-[10px] font-semibold text-slate-400 uppercase bg-slate-50 border-r border-slate-200 sticky left-0 z-10 print:bg-transparent print:border-black print:text-black" style={{ gridRow: `${i * 2 + 1} / span 2` }}>
+                          {label}
+                        </div>
+                        <div className="col-start-2 col-span-6 border-b border-slate-100 pointer-events-none print:border-gray-300" style={{ gridRow: `${i * 2 + 1} / span 1` }} />
+                        <div className="col-start-2 col-span-6 border-b border-slate-200/50 border-dashed pointer-events-none print:border-gray-300" style={{ gridRow: `${i * 2 + 2} / span 1` }} />
+                      </div>
+                    ))}
+
+                    {daysOfWeek.map((_, i) => (
+                      <div key={i} className="row-start-1 row-span-full border-r border-slate-200/50 pointer-events-none print:border-gray-300" style={{ gridColumnStart: i + 2 }} />
+                    ))}
+
+                    {viewingRoomSchedule.schedules?.map((item, idx) => {
+                      const dayIdx = daysOfWeek.indexOf(item.day)
+                      if (dayIdx === -1) return null
+                      return (
+                        <div
+                          key={item.id}
+                          className={`
+                            mx-1.5 my-1 p-3 rounded-lg border-l-4 shadow-sm transition-all cursor-default flex flex-col gap-1 overflow-hidden print:shadow-none print:border print:border-l-4 print:border-black
+                            ${colorSchemes[idx % colorSchemes.length]}
+                          `}
+                          style={{ gridRow: `${getRowIndex(item.startTime)} / span ${getRowSpan(item.startTime, item.endTime)}`, gridColumnStart: dayIdx + 2 }}
+                        >
+                          <span className="text-[10px] font-semibold uppercase tracking-tighter opacity-70 print:opacity-100">
+                            {item.sectionCode}
+                          </span>
+                          <h4 className="font-bold text-xs leading-tight tracking-tight uppercase line-clamp-2 text-slate-900">
+                            {item.courseCode}: {item.courseTitle}
+                          </h4>
+                          <div className="mt-auto space-y-1">
+                            <div className="flex items-center gap-1.5 text-[9px] font-semibold opacity-60 text-slate-600 print:opacity-100">
+                              <CalendarIcon className="w-2.5 h-2.5" />
+                              <span>{new Date(item.startTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} - {new Date(item.endTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                            </div>
+                            <div className="flex items-center gap-1.5 text-[9px] font-semibold print:opacity-100">
+                              <UserCheck className="w-2.5 h-2.5 text-slate-600" />
+                              <span className="text-slate-700">{item.instructor}</span>
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>

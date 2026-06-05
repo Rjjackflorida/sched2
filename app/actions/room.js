@@ -123,3 +123,60 @@ export async function deleteRoom(id) {
     return { success: false, error: "Failed to delete room from database." };
   }
 }
+
+/**
+ * Fetches the active schedule for a specific room.
+ */
+export async function getRoomScheduleData(roomId) {
+  try {
+    const { getSystemSettings } = await import('@/app/actions/settings');
+    const settingsRes = await getSystemSettings();
+    const activeSemester = settingsRes?.settings?.activeSemester || "1st";
+    const activeYear = settingsRes?.settings?.activeAcademicYear || 2024;
+
+    const room = await prisma.room.findUnique({
+      where: { id: roomId },
+      include: {
+        schedules: {
+          where: {
+            section: {
+              semester: activeSemester,
+              academicYear: activeYear
+            }
+          },
+          include: {
+            section: {
+              include: {
+                course: true,
+                section: { include: { program: true } },
+                faculty: { include: { user: true } }
+              }
+            }
+          }
+        }
+      }
+    });
+
+    if (!room) return { success: false, error: "Room not found." };
+
+    return { 
+      success: true, 
+      roomName: room.building ? `${room.building} - ${room.roomNumber || room.name}` : (room.roomNumber || room.name),
+      activeSemester,
+      activeAcademicYear: activeYear,
+      schedules: room.schedules.map(sch => ({
+        id: sch.id,
+        courseCode: sch.section.course.code,
+        courseTitle: sch.section.course.title,
+        sectionCode: `${sch.section.section.program.code} ${sch.section.section.yearLevel}-${sch.section.section.name}`,
+        instructor: sch.section.faculty ? `${sch.section.faculty.user.firstName} ${sch.section.faculty.user.lastName}` : "UNASSIGNED",
+        day: sch.dayOfWeek,
+        startTime: sch.startTime,
+        endTime: sch.endTime,
+      }))
+    };
+  } catch (error) {
+    console.error("Failed to fetch room schedule:", error);
+    return { success: false, error: "Failed to load room schedule." };
+  }
+}
