@@ -137,7 +137,7 @@ export async function getMasterScheduleData() {
         return {
           "Day": s.dayOfWeek,
           "Time Slot": `${formatT(s.startTime)} - ${formatT(s.endTime)}`,
-          "Room": s.room ? `${s.room.building} - ${s.room.roomNumber}` : "TBA",
+          "Room": s.room ? (s.room.building ? `${s.room.building} - ${s.room.roomNumber || s.room.name}` : (s.room.roomNumber || s.room.name)) : "TBA",
           "Course": `${s.section.course.code}: ${s.section.course.title}`,
           "Section": `${s.section.section.program.code} ${s.section.section.yearLevel}-${s.section.section.name}`,
           "Instructor": s.section.faculty ? `${s.section.faculty.user.firstName} ${s.section.faculty.user.lastName}` : "TBA",
@@ -201,12 +201,134 @@ export async function getFacultyBatchScheduleData() {
           "Course Title": s.section.course.title,
           "Units": s.section.course.units,
           "Section": `${s.section.section.program.code} ${s.section.section.yearLevel}-${s.section.section.name}`,
-          "Room": s.room ? `${s.room.building} - ${s.room.roomNumber}` : "TBA"
+          "Room": s.room ? (s.room.building ? `${s.room.building} - ${s.room.roomNumber || s.room.name}` : (s.room.roomNumber || s.room.name)) : "TBA"
         };
       })
     };
   } catch (error) {
     console.error("Faculty Batch Error:", error);
     return { success: false, error: "Failed to generate faculty batch report." };
+  }
+}
+
+/**
+ * 🏢 ROOM BATCH SCHEDULE DATA
+ * Returns a room-focused list of assignments, sorted by room.
+ */
+export async function getRoomBatchScheduleData() {
+  try {
+    const settingsRes = await getSystemSettings();
+    const semester = settingsRes.settings.activeSemester;
+    const year = settingsRes.settings.activeAcademicYear;
+
+    const schedules = await prisma.sectionSchedule.findMany({
+      where: {
+        section: {
+          semester: semester,
+          academicYear: year
+        }
+      },
+      include: {
+        room: true,
+        section: {
+          include: {
+            course: true,
+            section: { include: { program: true } },
+            faculty: { include: { user: true } }
+          }
+        }
+      },
+      orderBy: [
+        { room: { name: 'asc' } },
+        { dayOfWeek: 'asc' },
+        { startTime: 'asc' }
+      ]
+    });
+
+    return {
+      success: true,
+      data: schedules.map(s => {
+        const formatT = (date) => date.toLocaleTimeString('en-US', { 
+          hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'UTC' 
+        });
+        
+        const roomIdentifier = s.room ? (s.room.building ? `${s.room.building} - ${s.room.roomNumber || s.room.name}` : (s.room.roomNumber || s.room.name)) : "TBA";
+
+        return {
+          "Room": roomIdentifier,
+          "Day": s.dayOfWeek,
+          "Time Slot": `${formatT(s.startTime)} - ${formatT(s.endTime)}`,
+          "Course Code": s.section.course.code,
+          "Course Title": s.section.course.title,
+          "Section": `${s.section.section.program.code} ${s.section.section.yearLevel}-${s.section.section.name}`,
+          "Instructor": s.section.faculty ? `${s.section.faculty.user.firstName} ${s.section.faculty.user.lastName}` : "UNASSIGNED"
+        };
+      })
+    };
+  } catch (error) {
+    console.error("Room Batch Error:", error);
+    return { success: false, error: "Failed to generate room batch report." };
+  }
+}
+
+/**
+ * 🎓 STUDENT SECTION BATCH SCHEDULE DATA
+ * Returns a student section-focused list of assignments, sorted by program and year level.
+ */
+export async function getSectionBatchScheduleData() {
+  try {
+    const settingsRes = await getSystemSettings();
+    const semester = settingsRes.settings.activeSemester;
+    const year = settingsRes.settings.activeAcademicYear;
+
+    const schedules = await prisma.sectionSchedule.findMany({
+      where: {
+        section: {
+          semester: semester,
+          academicYear: year
+        }
+      },
+      include: {
+        room: true,
+        section: {
+          include: {
+            course: true,
+            section: { include: { program: true } },
+            faculty: { include: { user: true } }
+          }
+        }
+      },
+      orderBy: [
+        { section: { section: { program: { code: 'asc' } } } },
+        { section: { section: { yearLevel: 'asc' } } },
+        { section: { section: { name: 'asc' } } },
+        { dayOfWeek: 'asc' },
+        { startTime: 'asc' }
+      ]
+    });
+
+    return {
+      success: true,
+      data: schedules.map(s => {
+        const formatT = (date) => date.toLocaleTimeString('en-US', { 
+          hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'UTC' 
+        });
+
+        const blockName = `${s.section.section.program.code} ${s.section.section.yearLevel}-${s.section.section.name}`;
+
+        return {
+          "Student Block": blockName,
+          "Day": s.dayOfWeek,
+          "Time Slot": `${formatT(s.startTime)} - ${formatT(s.endTime)}`,
+          "Course Code": s.section.course.code,
+          "Course Title": s.section.course.title,
+          "Instructor": s.section.faculty ? `${s.section.faculty.user.firstName} ${s.section.faculty.user.lastName}` : "UNASSIGNED",
+          "Room": s.room ? (s.room.building ? `${s.room.building} - ${s.room.roomNumber || s.room.name}` : (s.room.roomNumber || s.room.name)) : "TBA"
+        };
+      })
+    };
+  } catch (error) {
+    console.error("Section Batch Error:", error);
+    return { success: false, error: "Failed to generate student section batch report." };
   }
 }

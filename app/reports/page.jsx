@@ -19,7 +19,9 @@ import {
   getRoomUtilizationData, 
   getFacultyWorkloadData, 
   getMasterScheduleData,
-  getFacultyBatchScheduleData 
+  getFacultyBatchScheduleData,
+  getRoomBatchScheduleData,
+  getSectionBatchScheduleData
 } from "@/app/actions/reports"
 import { exportToCSV } from "@/lib/utils"
 
@@ -73,6 +75,32 @@ export default function ReportsPage() {
     if (res.success) {
       exportToCSV(res.data, `Faculty_Schedules_Batch_${new Date().toLocaleDateString()}`)
       setMessage({ type: 'success', text: "All individual faculty schedules exported!" })
+    } else {
+      setMessage({ type: 'error', text: res.error })
+    }
+    setLoadingType(null)
+  }
+
+  const handleRoomBatchExport = async () => {
+    setLoadingType('room-batch')
+    setMessage(null)
+    const res = await getRoomBatchScheduleData()
+    if (res.success) {
+      exportToCSV(res.data, `Room_Schedules_Batch_${new Date().toLocaleDateString()}`)
+      setMessage({ type: 'success', text: "All individual room schedules exported!" })
+    } else {
+      setMessage({ type: 'error', text: res.error })
+    }
+    setLoadingType(null)
+  }
+
+  const handleSectionBatchExport = async () => {
+    setLoadingType('section-batch')
+    setMessage(null)
+    const res = await getSectionBatchScheduleData()
+    if (res.success) {
+      exportToCSV(res.data, `Student_Block_Schedules_Batch_${new Date().toLocaleDateString()}`)
+      setMessage({ type: 'success', text: "All individual student block schedules exported!" })
     } else {
       setMessage({ type: 'error', text: res.error })
     }
@@ -154,6 +182,44 @@ export default function ReportsPage() {
                       className="h-11 px-6 rounded-xl border-slate-200 text-teal-700 hover:bg-teal-50 hover:border-teal-200 transition-all font-bold text-[10px] uppercase tracking-widest shadow-sm"
                     >
                       {loadingType === 'faculty-batch' ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <FileSpreadsheet className="h-4 w-4 mr-2" />}
+                      Export CSV
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Room Schedules */}
+                <div className="flex items-center justify-between p-6 border border-slate-100 bg-white rounded-2xl shadow-sm group hover:border-teal-500 transition-all">
+                  <div>
+                    <h4 className="font-bold text-slate-900 leading-tight">Room Individual Schedules</h4>
+                    <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest mt-1">Batch export by physical room (Excel)</p>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button 
+                      onClick={handleRoomBatchExport}
+                      disabled={loadingType !== null}
+                      variant="outline" 
+                      className="h-11 px-6 rounded-xl border-slate-200 text-teal-700 hover:bg-teal-50 hover:border-teal-200 transition-all font-bold text-[10px] uppercase tracking-widest shadow-sm"
+                    >
+                      {loadingType === 'room-batch' ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <FileSpreadsheet className="h-4 w-4 mr-2" />}
+                      Export CSV
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Section Schedules */}
+                <div className="flex items-center justify-between p-6 border border-slate-100 bg-white rounded-2xl shadow-sm group hover:border-teal-500 transition-all">
+                  <div>
+                    <h4 className="font-bold text-slate-900 leading-tight">Student Block Schedules</h4>
+                    <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest mt-1">Batch export by block/section (Excel)</p>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button 
+                      onClick={handleSectionBatchExport}
+                      disabled={loadingType !== null}
+                      variant="outline" 
+                      className="h-11 px-6 rounded-xl border-slate-200 text-teal-700 hover:bg-teal-50 hover:border-teal-200 transition-all font-bold text-[10px] uppercase tracking-widest shadow-sm"
+                    >
+                      {loadingType === 'section-batch' ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <FileSpreadsheet className="h-4 w-4 mr-2" />}
                       Export CSV
                     </Button>
                   </div>

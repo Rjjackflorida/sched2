@@ -675,7 +675,7 @@ export default function ResourceManagementPage() {
                                    {program.sections.map(s => (
                                      <div key={s.id} className="group/sec flex items-center gap-1.5 px-2.5 py-1 bg-slate-50 border border-slate-100 rounded-lg text-xs font-semibold text-slate-700 hover:bg-white hover:border-teal-200 transition-all">
                                         {s.yearLevel}-{s.name}
-                                        <button onClick={() => setDeleteTarget({ type: 'section', id: s.id, name: `${program.code} ${s.yearLevel}-{s.name}`, subId: program.id })} className="opacity-0 group-hover/sec:opacity-100 text-slate-300 hover:text-red-500 transition-all"><X className="h-3 w-3" /></button>
+                                        <button onClick={() => setDeleteTarget({ type: 'section', id: s.id, name: `${program.code} ${s.yearLevel}-${s.name}`, subId: program.id })} className="opacity-0 group-hover/sec:opacity-100 text-slate-300 hover:text-red-500 transition-all"><X className="h-3 w-3" /></button>
                                      </div>
                                    ))}
                                    <button 
