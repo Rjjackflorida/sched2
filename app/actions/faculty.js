@@ -4,9 +4,9 @@ import { prisma } from "@/lib/prisma"
 
 /**
  * Fetches all users with the 'faculty' role and their associated profiles.
- * Implements logic to handle missing profiles or departments.
+ * Optionally filters workload by semester and academic year.
  */
-export async function getFacultyRoster() {
+export async function getFacultyRoster(semester, academicYear) {
   try {
     // Fetch users filtered by role 'faculty'
     const users = await prisma.user.findMany({
@@ -14,8 +14,11 @@ export async function getFacultyRoster() {
       include: {
         facultyProfile: {
           include: {
-            department: true,
             sections: {
+              where: {
+                ...(semester && { semester }),
+                ...(academicYear && { academicYear: parseInt(academicYear, 10) })
+              },
               include: {
                 course: true
               }
@@ -45,9 +48,9 @@ export async function getFacultyRoster() {
 
       return {
         id: user.id,
+        profileId: profile?.id,
         fullName: `${user.firstName} ${user.lastName}`,
         employeeId: profile?.employeeId ?? "not assigned yet",
-        departmentName: profile?.department?.name ?? "not assigned yet",
         employmentType: profile?.employmentType ?? "not assigned yet",
         workload: {
           current: currentWorkload,
@@ -68,13 +71,12 @@ export async function getFacultyRoster() {
  * Updates a faculty member's profile details.
  */
 export async function updateFacultyProfile(userId, data) {
-  const { departmentId, employmentType, maxUnitsPerSem } = data;
+  const { employmentType, maxUnitsPerSem } = data;
 
   try {
     const updatedProfile = await prisma.facultyProfile.update({
       where: { userId: userId },
       data: {
-        departmentId: departmentId || null,
         employmentType: employmentType,
         maxUnitsPerSem: parseInt(maxUnitsPerSem, 10),
       },
@@ -206,7 +208,7 @@ export async function saveFacultyAvailability(userId, { semester, academicYear, 
 }
 
 /**
- * Fetches availability for a specific faculty, semester, and year.
+ * Fetches the faculty's saved availability for the specified semester and splits them into 30-min UI blocks.
  */
 export async function getFacultyAvailability(userId, semester, academicYear) {
   try {
@@ -214,35 +216,104 @@ export async function getFacultyAvailability(userId, semester, academicYear) {
       where: { userId }
     });
 
-    if (!profile) return { success: false, error: "Profile not found." };
+    if (!profile) return { success: false, error: "Faculty profile not found." };
 
     const records = await prisma.facultyAvailability.findMany({
       where: {
         facultyId: profile.id,
         semester,
-        academicYear: parseInt(academicYear, 10),
-        status: "unavailable"
+        academicYear: parseInt(academicYear, 10)
       }
     });
 
-    // Convert ranges back into 30-min block keys for the UI
     const blocks = [];
-    records.forEach(rec => {
-      let current = new Date(rec.startTime);
-      const end = new Date(rec.endTime);
 
-      while (current < end) {
-        const h = String(current.getUTCHours()).padStart(2, '0');
-        const m = String(current.getUTCMinutes()).padStart(2, '0');
-        blocks.push(`${rec.dayOfWeek}-${h}:${m}`);
-        current.setUTCMinutes(current.getUTCMinutes() + 30);
+    records.forEach(record => {
+      const day = record.dayOfWeek;
+      let currentTime = new Date(record.startTime);
+      const endTime = new Date(record.endTime);
+
+      while (currentTime < endTime) {
+        const hh = String(currentTime.getUTCHours()).padStart(2, '0');
+        const mm = String(currentTime.getUTCMinutes()).padStart(2, '0');
+        blocks.push(`${day}-${hh}:${mm}`);
+
+        // Add 30 minutes
+        currentTime.setUTCMinutes(currentTime.getUTCMinutes() + 30);
       }
     });
 
     return { success: true, blocks };
   } catch (error) {
     console.error("Failed to fetch availability:", error);
-    return { success: false, error: "Failed to load availability." };
+    return { success: false, error: "Database error while fetching availability." };
   }
+}
+
+/**
+ * Fetches profile, assignments, and workload for a specific faculty user.
+ */
+export async function getFacultyProfileData(userId, semester, academicYear) {
+  try {
+    const profile = await prisma.facultyProfile.findUnique({
+      where: { userId },
+      include: {
+        user: true,
+        sections: {
+          where: {
+            semester: semester,
+            academicYear: parseInt(academicYear, 10)
+          },
+          include: {
+            course: true,
+            section: { include: { program: true } },
+            schedules: { include: { room: true } }
+          }
+        }
+      }
+    });
+
+    if (!profile) return { success: false, error: "Profile not found." };
+
+    // Calculate Workload for the specific period
+    const currentWorkload = profile.sections.reduce((sum, s) => sum + (s.course?.units || 0), 0);
+
+    return {
+      success: true,
+      data: {
+        fullName: `${profile.user.firstName} ${profile.user.lastName}`,
+        employmentType: profile.employmentType,
+        maxUnits: profile.maxUnitsPerSem,
+        currentWorkload,
+        sections: profile.sections.map(s => ({
+          id: s.id,
+          courseCode: s.course.code,
+          courseTitle: s.course.title,
+          sectionCode: `${s.section.program.code}-${s.section.yearLevel}${s.section.name}`,
+          units: s.course.units,
+          schedules: s.schedules.map(sch => ({
+            day: sch.dayOfWeek,
+            time: `${formatTime(sch.startTime)} - ${formatTime(sch.endTime)}`,
+            room: sch.room ? `${sch.room.building} - ${sch.room.roomNumber}` : "TBA"
+          }))
+        }))
+      }
+    };
+  } catch (error) {
+    console.error("Failed to fetch faculty profile data:", error);
+    return { success: false, error: "Database error." };
+  }
+}
+
+/**
+ * Helper to format Prisma DateTime (Time only) to readable string.
+ */
+function formatTime(date) {
+  return date.toLocaleTimeString('en-US', { 
+    hour: '2-digit', 
+    minute: '2-digit', 
+    hour12: true,
+    timeZone: 'UTC' 
+  });
 }
 

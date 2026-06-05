@@ -25,24 +25,6 @@ model User {
   @@map("users")
 }
 
-/**
- * Department model representing academic units.
- * Uses a custom ID format: CODE + HHMM (Creation Time).
- */
-model Department {
-  id            String    @id @map("id")
-  name          String
-  code          String    @unique
-  headFacultyId String?   @db.Uuid @map("head_faculty_id")
-  createdAt     DateTime  @default(now()) @map("created_at")
-
-  // Relationships
-  headFaculty   FacultyProfile? @relation("DepartmentHead", fields: [headFacultyId], references: [id])
-  courses       Course[]
-  faculties     FacultyProfile[] @relation("DepartmentFaculty")
-
-  @@map("departments")
-}
 
 /**
  * FacultyProfile extends the User model with academic-specific details.
@@ -50,7 +32,6 @@ model Department {
 model FacultyProfile {
   id                String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   userId            String    @unique @db.Uuid @map("user_id")
-  departmentId      String?   @map("department_id") // Made nullable to allow initial user creation without department
   employeeId        String?   @unique @map("employee_id")
   designation       String?
   employmentType    String?    @map("employment_type")
@@ -60,8 +41,6 @@ model FacultyProfile {
 
   // Relationships
   user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  department        Department? @relation("DepartmentFaculty", fields: [departmentId], references: [id])
-  headOfDepartment  Department[] @relation("DepartmentHead")
 
   availabilities    FacultyAvailability[]
   sections          CourseSection[]
@@ -74,7 +53,6 @@ model FacultyProfile {
  */
 model Course {
   id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  departmentId  String    @map("department_id")
   code          String    @unique
   title         String
   units         Int
@@ -82,7 +60,6 @@ model Course {
   createdAt     DateTime  @default(now()) @map("created_at")
 
   // Relationships
-  department    Department @relation(fields: [departmentId], references: [id])
   sections      CourseSection[]
 
   @@map("courses")
@@ -134,8 +111,7 @@ model CourseSection {
   id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   courseId      String    @db.Uuid @map("course_id")
   facultyId     String?   @db.Uuid @map("faculty_id")
-  program       String
-  sectionCode   String    @map("section_code")
+  sectionId     String    @db.Uuid @map("section_id")
   semester      String
   academicYear  Int       @map("academic_year")
   maxStudents   Int?      @map("max_students")
@@ -145,10 +121,42 @@ model CourseSection {
 
   course        Course    @relation(fields: [courseId], references: [id])
   faculty       FacultyProfile? @relation(fields: [facultyId], references: [id])
+  section       Section   @relation(fields: [sectionId], references: [id], onDelete: Cascade)
   schedules     SectionSchedule[]
 
-  @@unique([courseId, program, sectionCode, semester, academicYear])
+  @@unique([courseId, sectionId, semester, academicYear])
   @@map("course_sections")
+}
+
+/**
+ * Program represents academic programs (e.g., BSIT, BSA).
+ */
+model Program {
+  id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  code      String    @unique // e.g., "BSIT"
+  name      String    // e.g., "Bachelor of Science in Information Technology"
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  sections  Section[]
+
+  @@map("programs")
+}
+
+/**
+ * Section represents a specific year level and block under a program.
+ */
+model Section {
+  id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  programId String    @db.Uuid @map("program_id")
+  yearLevel Int       @map("year_level") // e.g., 1, 2, 3, 4
+  name      String    // e.g., "A", "B", "C"
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  program        Program         @relation(fields: [programId], references: [id], onDelete: Cascade)
+  courseSections CourseSection[]
+
+  @@unique([programId, yearLevel, name])
+  @@map("sections")
 }
 
 /**

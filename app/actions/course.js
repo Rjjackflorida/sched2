@@ -4,14 +4,10 @@ import { prisma } from "@/lib/prisma"
 
 /**
  * Fetches all courses from the database.
- * Includes the department name for display.
  */
 export async function getCourses() {
   try {
     const courses = await prisma.course.findMany({
-      include: {
-        department: true
-      },
       orderBy: { code: "asc" },
     });
 
@@ -23,8 +19,6 @@ export async function getCourses() {
         title: c.title,
         description: c.description,
         units: c.units,
-        departmentId: c.departmentId,
-        departmentName: c.department.name,
       }))
     };
   } catch (error) {
@@ -52,10 +46,10 @@ function generateCourseCode(title) {
  * Creates a new course in the database.
  */
 export async function createCourse(data) {
-  const { title, description, departmentId, units } = data;
+  const { title, description, units } = data;
 
-  if (!title || !departmentId || !units) {
-    return { success: false, error: "Title, Department, and Units are required." };
+  if (!title || !units) {
+    return { success: false, error: "Title and Units are required." };
   }
 
   const generatedCode = generateCourseCode(title);
@@ -66,7 +60,6 @@ export async function createCourse(data) {
         code: generatedCode,
         title,
         description: description || null,
-        departmentId,
         units: parseInt(units, 10),
       },
     });
@@ -85,10 +78,10 @@ export async function createCourse(data) {
  * Updates an existing course.
  */
 export async function updateCourse(id, data) {
-  const { title, description, departmentId, units } = data;
+  const { title, description, units } = data;
 
-  if (!title || !departmentId || !units) {
-    return { success: false, error: "Title, Department, and Units are required." };
+  if (!title || !units) {
+    return { success: false, error: "Title and Units are required." };
   }
 
   try {
@@ -97,7 +90,6 @@ export async function updateCourse(id, data) {
       data: {
         title,
         description: description || null,
-        departmentId,
         units: parseInt(units, 10),
       },
     });

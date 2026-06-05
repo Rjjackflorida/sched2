@@ -2,8 +2,9 @@
 
 import { usePathname } from "next/navigation"
 import Link from "next/link"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { LayoutDashboard, CalendarDays, CalendarRange, MessageSquare, Bell, Settings, HelpCircle, LogOut } from "lucide-react"
+import { useState, useEffect } from "react"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { LayoutDashboard, CalendarDays, CalendarRange, MessageSquare, Bell, Settings, HelpCircle } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,9 +14,23 @@ import {
   DropdownMenuTrigger,
   DropdownMenuGroup,
 } from "@/components/ui/dropdown-menu"
-import { logout } from "@/app/actions/auth"
+import { logout, getUserId } from "@/app/actions/auth"
+import { getUserProfile } from "@/app/actions/user"
+
 export default function FacultyLayout({ children }) {
   const pathname = usePathname()
+  const [user, setUser] = useState(null)
+
+  useEffect(() => {
+    async function loadUser() {
+      const userId = await getUserId()
+      if (userId) {
+        const res = await getUserProfile(userId)
+        if (res.success) setUser(res.user)
+      }
+    }
+    loadUser()
+  }, [])
 
   const navItems = [
     { name: "Dashboard", href: "/faculty-portal", icon: LayoutDashboard },
@@ -24,6 +39,9 @@ export default function FacultyLayout({ children }) {
     { name: "Requests / Messages", href: "/faculty-portal/requests", icon: MessageSquare },
   ]
 
+  const fullName = user?.fullName || "Faculty Member"
+  const initials = user ? `${user.firstName[0]}${user.lastName[0]}` : "FM"
+
   return (
     <div className="flex h-screen bg-slate-50 w-full overflow-hidden">
       {/* Sidebar */}
@@ -31,7 +49,7 @@ export default function FacultyLayout({ children }) {
         <div className="p-4 border-b border-slate-200">
           <div className="flex items-center gap-3">
             <div>
-              <p className="text-sm font-semibold text-slate-900">Dr. Faculty Member</p>
+              <p className="text-sm font-semibold text-slate-900">{user ? fullName : "Loading..."}</p>
               <p className="text-xs text-slate-500">Faculty Portal</p>
             </div>
           </div>
@@ -81,7 +99,7 @@ export default function FacultyLayout({ children }) {
             <DropdownMenu>
               <DropdownMenuTrigger className="outline-none rounded-full ring-offset-2 focus:ring-2 focus:ring-teal-600 transition-shadow">
                 <Avatar className="h-8 w-8 cursor-pointer hover:opacity-80 transition-opacity">
-                  <AvatarFallback>FM</AvatarFallback>
+                  <AvatarFallback>{initials}</AvatarFallback>
                 </Avatar>
               </DropdownMenuTrigger>
               <DropdownMenuContent className="w-56" align="end">
@@ -103,7 +121,6 @@ export default function FacultyLayout({ children }) {
             </DropdownMenu>
           </div>
         </header>
-
         {/* Scrollable Page Content */}
         <div className="flex-1 overflow-auto bg-slate-50">
           {children}

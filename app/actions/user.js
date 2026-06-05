@@ -176,7 +176,35 @@ export async function updateUser(userId, data) {
 }
 
 /**
- * Toggles a user's active/inactive status.
+ * Fetches profile details for a specific user.
+ */
+export async function getUserProfile(userId) {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) return { success: false, error: "User not found." };
+
+    return {
+      success: true,
+      user: {
+        id: user.id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        fullName: `${user.firstName} ${user.lastName}`,
+        email: user.email,
+        role: user.role,
+      }
+    };
+  } catch (error) {
+    console.error("Failed to fetch user profile:", error);
+    return { success: false, error: "Database error." };
+  }
+}
+
+/**
+ * Updates a user's active/inactive status.
  */
 export async function toggleUserStatus(userId, currentStatus) {
   try {
