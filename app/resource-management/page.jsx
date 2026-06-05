@@ -188,7 +188,7 @@ export default function ResourceManagementPage() {
       id: room.id,
       type: room.type,
       building: room.building,
-      roomNumber: room.roomNumber,
+      roomNumber: room.roomNumber || "",
       capacity: room.capacity
     })
     setIsEditRoomModalOpen(true)
