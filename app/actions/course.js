@@ -27,37 +27,22 @@ export async function getCourses() {
   }
 }
 
-/**
- * Generates a course code based on Title and Creation Time.
- * Formula: First 6 consonants (uppercase) + HHMM (Creation Time)
- */
-function generateCourseCode(title) {
-  // 1. Get consonants and limit to 6
-  const consonants = title.replace(/[^bcdfghjklmnpqrstvwxyzBCDFGHJKLMNPQRSTVWXYZ]/g, '').substring(0, 6).toUpperCase();
-  
-  // 2. Get creation time (HHMM)
-  const now = new Date();
-  const hhmm = `${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}`;
-  
-  return `${consonants}-${hhmm}`;
-}
+
 
 /**
  * Creates a new course in the database.
  */
 export async function createCourse(data) {
-  const { title, description, units } = data;
+  const { code, title, description, units } = data;
 
-  if (!title || !units) {
-    return { success: false, error: "Title and Units are required." };
+  if (!code || !title || !units) {
+    return { success: false, error: "Code, Title and Units are required." };
   }
-
-  const generatedCode = generateCourseCode(title);
 
   try {
     const newCourse = await prisma.course.create({
       data: {
-        code: generatedCode,
+        code,
         title,
         description: description || null,
         units: parseInt(units, 10),
@@ -78,16 +63,17 @@ export async function createCourse(data) {
  * Updates an existing course.
  */
 export async function updateCourse(id, data) {
-  const { title, description, units } = data;
+  const { code, title, description, units } = data;
 
-  if (!title || !units) {
-    return { success: false, error: "Title and Units are required." };
+  if (!code || !title || !units) {
+    return { success: false, error: "Code, Title and Units are required." };
   }
 
   try {
     const updatedCourse = await prisma.course.update({
       where: { id },
       data: {
+        code,
         title,
         description: description || null,
         units: parseInt(units, 10),

@@ -104,8 +104,8 @@ export default function ResourceManagementPage() {
   // --- FORM DATA STATES ---
   const [roomFormData, setRoomFormData] = useState({ name: "", type: "", building: "", roomNumber: "", capacity: "" })
   const [editRoomFormData, setEditRoomFormData] = useState({ id: "", name: "", type: "", building: "", roomNumber: "", capacity: "" })
-  const [courseFormData, setCourseFormData] = useState({ title: "", description: "", units: 3 })
-  const [editCourseFormData, setEditCourseFormData] = useState({ id: "", title: "", description: "", units: 3 })
+  const [courseFormData, setCourseFormData] = useState({ code: "", title: "", description: "", units: 3 })
+  const [editCourseFormData, setEditCourseFormData] = useState({ id: "", code: "", title: "", description: "", units: 3 })
   const [facultyFormData, setFacultyFormData] = useState({ employmentType: "full_time", maxUnitsPerSem: 18 })
   const [assignmentFormData, setAssignmentFormData] = useState({ courseId: "", sectionId: "", facultyId: "", semester: "1st", academicYear: "2024", maxStudents: 40 })
   const [editAssignmentFormData, setEditAssignmentFormData] = useState({ id: "", courseId: "", sectionId: "", facultyId: "", semester: "1st", academicYear: "2024", maxStudents: 40 })
@@ -118,6 +118,7 @@ export default function ResourceManagementPage() {
   const [editingFaculty, setEditingFaculty] = useState(null)
   const [selectedAssignment, setSelectedAssignment] = useState(null)
   const [formError, setFormError] = useState(null)
+  const [assignmentWarning, setAssignmentWarning] = useState(null)
   const [viewingRoomSchedule, setViewingRoomSchedule] = useState(null)
   const [isLoadingRoomSchedule, setIsLoadingRoomSchedule] = useState(false)
   const [viewingFacultySchedule, setViewingFacultySchedule] = useState(null)
@@ -232,6 +233,7 @@ export default function ResourceManagementPage() {
     setSelectedRoom(room)
     setEditRoomFormData({
       id: room.id,
+      name: room.name,
       type: room.type,
       building: room.building,
       roomNumber: room.roomNumber || "",
@@ -284,6 +286,7 @@ export default function ResourceManagementPage() {
     setSelectedCourse(course)
     setEditCourseFormData({
       id: course.id,
+      code: course.code,
       title: course.title,
       description: course.description || "",
       units: course.units
@@ -358,14 +361,18 @@ export default function ResourceManagementPage() {
     setIsSubmitting(false)
   }
 
-  const handleAddAssignmentSubmit = async (e) => {
-    e.preventDefault()
+  const handleAddAssignmentSubmit = async (e, force = false) => {
+    if (e) e.preventDefault()
     setIsSubmitting(true)
-    const res = await createCourseSection(assignmentFormData)
+    const payload = { ...assignmentFormData, forceAssignment: force }
+    const res = await createCourseSection(payload)
     if (res.success) {
       await refreshAssignments()
       setIsAssignmentModalOpen(false)
+      setAssignmentWarning(null)
       refreshFaculty()
+    } else if (res.requiresConfirmation) {
+      setAssignmentWarning(res.error)
     } else {
       setFormError(res.error)
     }
@@ -383,17 +390,22 @@ export default function ResourceManagementPage() {
       academicYear: section.academicYear.toString(),
       maxStudents: section.maxStudents
     })
+    setAssignmentWarning(null)
     setIsEditAssignmentModalOpen(true)
   }
 
-  const handleUpdateAssignmentSubmit = async (e) => {
-    e.preventDefault()
+  const handleUpdateAssignmentSubmit = async (e, force = false) => {
+    if (e) e.preventDefault()
     setIsSubmitting(true)
-    const res = await updateCourseSection(editAssignmentFormData.id, editAssignmentFormData)
+    const payload = { ...editAssignmentFormData, forceAssignment: force }
+    const res = await updateCourseSection(editAssignmentFormData.id, payload)
     if (res.success) {
       await refreshAssignments()
       setIsEditAssignmentModalOpen(false)
+      setAssignmentWarning(null)
       refreshFaculty()
+    } else if (res.requiresConfirmation) {
+      setAssignmentWarning(res.error)
     } else {
       setFormError(res.error)
     }
@@ -553,7 +565,10 @@ export default function ResourceManagementPage() {
                   onClick={() => {
                     if (activeTab === "rooms") setIsRoomModalOpen(true)
                     if (activeTab === "courses") setIsCourseModalOpen(true)
-                    if (activeTab === "assignments") setIsAssignmentModalOpen(true)
+                    if (activeTab === "assignments") {
+                      setIsAssignmentModalOpen(true)
+                      setAssignmentWarning(null)
+                    }
                     if (activeTab === "programs") setIsProgramModalOpen(true)
                     setFormError(null)
                   }}
@@ -668,9 +683,9 @@ export default function ResourceManagementPage() {
                               </td>
                               <td className="px-6 py-4">
                                 <div className="space-y-1.5 w-32">
-                                  <div className="flex justify-between text-[10px] font-semibold uppercase tracking-tighter">
-                                    <span className={f.workload.current > (f.workload.max || 0) ? "text-red-600" : "text-slate-400"}>{f.workload.current} Units</span>
-                                    <span className="text-slate-300">/ {f.workload.max || '??'}</span>
+                                  <div className={`flex justify-between text-[10px] font-semibold uppercase tracking-tighter ${f.workload.current > (f.workload.max || 0) ? "text-red-600" : "text-slate-500"}`}>
+                                    <span>{f.workload.current} Units</span>
+                                    <span>/ {f.workload.max || '??'}</span>
                                   </div>
                                   <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
                                      <div 
@@ -880,6 +895,12 @@ export default function ResourceManagementPage() {
               {formError && <div className="p-3 bg-red-50 border border-red-100 text-red-600 rounded-lg text-sm font-medium animate-in slide-in-from-top-1">{formError}</div>}
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-slate-500 uppercase flex items-center gap-2">
+                  <MapPin className="h-3.5 w-3.5" /> Room Name *
+                </label>
+                <input required value={roomFormData.name} onChange={e => setRoomFormData({...roomFormData, name: e.target.value})} placeholder="e.g. RM-101" className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 uppercase transition-all shadow-sm" />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-500 uppercase flex items-center gap-2">
                   <Monitor className="h-3.5 w-3.5" /> Room Type *
                 </label>
                 <select required value={roomFormData.type} onChange={(e) => handleRoomTypeChange(e)} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all shadow-sm bg-white">
@@ -940,11 +961,9 @@ export default function ResourceManagementPage() {
               )}
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-slate-500 uppercase flex items-center gap-2">
-                  <MapPin className="h-3.5 w-3.5" /> Room Name (Preview)
+                  <MapPin className="h-3.5 w-3.5" /> Room Name *
                 </label>
-                <div className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-teal-700 font-bold font-mono shadow-inner">
-                  {selectedRoom?.name}
-                </div>
+                <input required value={editRoomFormData.name} onChange={e => setEditRoomFormData({...editRoomFormData, name: e.target.value})} placeholder="e.g. RM-101" className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 uppercase transition-all shadow-sm" />
               </div>
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-slate-500 uppercase flex items-center gap-2">
@@ -1030,6 +1049,12 @@ export default function ResourceManagementPage() {
               {formError && <div className="p-3 bg-red-50 border border-red-100 text-red-600 rounded-lg text-sm font-medium animate-in slide-in-from-top-1">{formError}</div>}
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-slate-500 uppercase flex items-center gap-2">
+                  <BookOpen className="h-3.5 w-3.5" /> Subject Code *
+                </label>
+                <input type="text" required value={courseFormData.code} onChange={(e) => setCourseFormData({...courseFormData, code: e.target.value})} placeholder="e.g. COMP-101" className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 uppercase transition-all shadow-sm" />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-500 uppercase flex items-center gap-2">
                   <Library className="h-3.5 w-3.5" /> Course Title *
                 </label>
                 <input type="text" required value={courseFormData.title} onChange={(e) => setCourseFormData({...courseFormData, title: e.target.value})} placeholder="e.g. Computer Programming 1" className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all shadow-sm" />
@@ -1075,9 +1100,9 @@ export default function ResourceManagementPage() {
               {formError && <div className="p-3 bg-red-50 border border-red-100 text-red-600 rounded-lg text-sm font-medium animate-in slide-in-from-top-1">{formError}</div>}
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-slate-500 uppercase flex items-center gap-2">
-                  <MapPin className="h-3.5 w-3.5" /> Course Code
+                  <BookOpen className="h-3.5 w-3.5" /> Subject Code *
                 </label>
-                <input type="text" readOnly value={selectedCourse?.code} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-500 font-mono font-bold shadow-inner" />
+                <input type="text" required value={editCourseFormData.code} onChange={(e) => setEditCourseFormData({...editCourseFormData, code: e.target.value})} placeholder="e.g. COMP-101" className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 uppercase transition-all shadow-sm" />
               </div>
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-slate-500 uppercase flex items-center gap-2">
@@ -1135,15 +1160,7 @@ export default function ResourceManagementPage() {
                   <option value="part_time">Part Time</option>
                 </select>
               </div>
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-500 uppercase flex items-center gap-2">
-                  <BarChart3 className="h-3.5 w-3.5" /> Workload Limit (Units)
-                </label>
-                <div className="relative">
-                  <input type="number" readOnly value={facultyFormData.maxUnitsPerSem} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm font-bold text-slate-900 focus:outline-none shadow-inner" />
-                  <div className="absolute right-3 top-2.5 text-[9px] font-black text-teal-600 uppercase tracking-tighter">Auto-Limit</div>
-                </div>
-              </div>
+
               <div className="pt-4 flex justify-end gap-3 border-t border-slate-100">
                 <Button type="button" variant="ghost" onClick={() => setIsEditFacultyModalOpen(false)} disabled={isSubmitting} className="text-slate-500 hover:bg-slate-50">Cancel</Button>
                 <Button type="submit" className="bg-[#115e59] hover:bg-teal-900 text-white shadow-lg shadow-teal-900/10 px-6 font-semibold" disabled={isSubmitting}>Save Changes</Button>
@@ -1166,8 +1183,19 @@ export default function ResourceManagementPage() {
               </div>
               <button onClick={() => setIsAssignmentModalOpen(false)} className="text-slate-400 hover:text-slate-600 transition-colors"><X className="h-5 w-5" /></button>
             </div>
-            <form onSubmit={handleAddAssignmentSubmit} className="p-6 space-y-5">
+            <form onSubmit={(e) => handleAddAssignmentSubmit(e, false)} className="p-6 space-y-5">
               {formError && <div className="p-3 bg-red-50 border border-red-100 text-red-600 rounded-lg text-sm font-medium animate-in slide-in-from-top-1">{formError}</div>}
+              {assignmentWarning && (
+                <div className="p-4 bg-orange-50 border border-orange-200 text-orange-800 rounded-lg text-sm font-medium animate-in slide-in-from-top-1">
+                  <div className="flex gap-2">
+                    <AlertCircle className="h-5 w-5 shrink-0" />
+                    <p>{assignmentWarning}</p>
+                  </div>
+                  <div className="mt-3 flex justify-end gap-2">
+                    <Button type="button" onClick={() => handleAddAssignmentSubmit(null, true)} className="h-8 text-xs bg-orange-600 hover:bg-orange-700 text-white">Yes, Proceed</Button>
+                  </div>
+                </div>
+              )}
               
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-slate-500 uppercase flex items-center gap-2">
@@ -1249,8 +1277,19 @@ export default function ResourceManagementPage() {
               </div>
               <button onClick={() => setIsEditAssignmentModalOpen(false)} className="text-slate-400 hover:text-slate-600 transition-colors"><X className="h-5 w-5" /></button>
             </div>
-            <form onSubmit={handleUpdateAssignmentSubmit} className="p-6 space-y-5">
+            <form onSubmit={(e) => handleUpdateAssignmentSubmit(e, false)} className="p-6 space-y-5">
               {formError && <div className="p-3 bg-red-50 border border-red-100 text-red-600 rounded-lg text-sm font-medium animate-in slide-in-from-top-1">{formError}</div>}
+              {assignmentWarning && (
+                <div className="p-4 bg-orange-50 border border-orange-200 text-orange-800 rounded-lg text-sm font-medium animate-in slide-in-from-top-1">
+                  <div className="flex gap-2">
+                    <AlertCircle className="h-5 w-5 shrink-0" />
+                    <p>{assignmentWarning}</p>
+                  </div>
+                  <div className="mt-3 flex justify-end gap-2">
+                    <Button type="button" onClick={() => handleUpdateAssignmentSubmit(null, true)} className="h-8 text-xs bg-orange-600 hover:bg-orange-700 text-white">Yes, Proceed</Button>
+                  </div>
+                </div>
+              )}
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-slate-500 uppercase flex items-center gap-2">
                   <BookOpen className="h-3.5 w-3.5" /> Course *

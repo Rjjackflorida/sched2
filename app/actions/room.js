@@ -17,23 +17,15 @@ export async function getRooms() {
   }
 }
 
-/**
- * Generates a room name based on Type and Room Number.
- * Formula: Type(first word, without vowels) + "-" + Room number
- */
-function generateRoomName(type, roomNumber) {
-  const firstWord = type.split(' ')[0];
-  const prefix = firstWord.replace(/[aeiouAEIOU]/g, '').toUpperCase();
-  return `${prefix}-${roomNumber}`;
-}
+
 
 /**
  * Creates a new room in the database.
  */
 export async function createRoom(data) {
-  const { type, capacity, building, roomNumber } = data;
+  const { name, type, capacity, building, roomNumber } = data;
 
-  if (!type || !capacity || !building || !roomNumber) {
+  if (!name || !type || !capacity || !building || !roomNumber) {
     return { success: false, error: "All fields are required." };
   }
 
@@ -42,12 +34,10 @@ export async function createRoom(data) {
     return { success: false, error: "Room number must be a numeric value with a maximum of 5 digits." };
   }
 
-  const generatedName = generateRoomName(type, roomNumber);
-
   try {
     const newRoom = await prisma.room.create({
       data: {
-        name: generatedName,
+        name,
         building,
         capacity: parseInt(capacity, 10),
         type,
@@ -66,22 +56,17 @@ export async function createRoom(data) {
  * Updates an existing room.
  */
 export async function updateRoom(id, data) {
-  const { type, capacity, building, roomNumber } = data;
+  const { name, type, capacity, building, roomNumber } = data;
 
-  if (!type || !capacity || !building || !roomNumber) {
+  if (!name || !type || !capacity || !building || !roomNumber) {
     return { success: false, error: "All fields are required." };
   }
-
-  // Formula for name update
-  const firstWord = type.split(' ')[0];
-  const prefix = firstWord.replace(/[aeiouAEIOU]/g, '').toUpperCase();
-  const generatedName = `${prefix}-${roomNumber}`;
 
   try {
     const updatedRoom = await prisma.room.update({
       where: { id },
       data: {
-        name: generatedName,
+        name,
         building,
         capacity: parseInt(capacity, 10),
         type,

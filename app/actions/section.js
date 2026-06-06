@@ -63,7 +63,7 @@ export async function getCourseSections() {
  * Creates a new course section (assignment).
  */
 export async function createCourseSection(data) {
-  const { courseId, facultyId, sectionId, semester, academicYear, maxStudents } = data;
+  const { courseId, facultyId, sectionId, semester, academicYear, maxStudents, forceAssignment } = data;
 
   if (!courseId || !sectionId || !semester || !academicYear) {
     return { success: false, error: "Course, Section, Semester, and Academic Year are required." };
@@ -103,10 +103,11 @@ export async function createCourseSection(data) {
         const currentUnits = profile.sections.reduce((sum, s) => sum + (s.course?.units || 0), 0);
         const totalPotentialUnits = currentUnits + courseToAdd.units;
 
-        if (totalPotentialUnits > profile.maxUnitsPerSem) {
+        if (totalPotentialUnits > profile.maxUnitsPerSem && !forceAssignment) {
           return { 
             success: false, 
-            error: `Cannot assign ${courseToAdd.code}. This would exceed ${profile.user.firstName}'s workload limit of ${profile.maxUnitsPerSem} units. (Current: ${currentUnits}, New Total: ${totalPotentialUnits})` 
+            requiresConfirmation: true,
+            error: `Caution: Assigning ${courseToAdd.code} will put ${profile.user.firstName} on overload. (Current: ${currentUnits}, New Total: ${totalPotentialUnits} / Limit: ${profile.maxUnitsPerSem} units). Do you want to proceed?` 
           };
         }
       }
@@ -137,7 +138,7 @@ export async function createCourseSection(data) {
  * Updates an existing course section.
  */
 export async function updateCourseSection(id, data) {
-  const { courseId, facultyId, sectionId, semester, academicYear, maxStudents } = data;
+  const { courseId, facultyId, sectionId, semester, academicYear, maxStudents, forceAssignment } = data;
 
   try {
     // --- WORKLOAD GUARD ---
@@ -174,10 +175,11 @@ export async function updateCourseSection(id, data) {
         const otherUnits = profile.sections.reduce((sum, s) => sum + (s.course?.units || 0), 0);
         const totalPotentialUnits = otherUnits + newCourse.units;
 
-        if (totalPotentialUnits > profile.maxUnitsPerSem) {
+        if (totalPotentialUnits > profile.maxUnitsPerSem && !forceAssignment) {
           return { 
             success: false, 
-            error: `Cannot assign ${newCourse.code}. This would exceed ${profile.user.firstName}'s workload limit of ${profile.maxUnitsPerSem} units. (Current: ${otherUnits}, New Total: ${totalPotentialUnits})` 
+            requiresConfirmation: true,
+            error: `Caution: Assigning ${newCourse.code} will put ${profile.user.firstName} on overload. (Current: ${otherUnits}, New Total: ${totalPotentialUnits} / Limit: ${profile.maxUnitsPerSem} units). Do you want to proceed?` 
           };
         }
       }
