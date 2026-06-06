@@ -19,6 +19,7 @@ export async function getCourses() {
         title: c.title,
         description: c.description,
         units: c.units,
+        hasLab: c.hasLab,
       }))
     };
   } catch (error) {
@@ -33,19 +34,22 @@ export async function getCourses() {
  * Creates a new course in the database.
  */
 export async function createCourse(data) {
-  const { code, title, description, units } = data;
+  const { code, title, description, units, hasLab } = data;
 
   if (!code || !title || !units) {
     return { success: false, error: "Code, Title and Units are required." };
   }
 
   try {
+    const finalUnits = parseInt(units, 10) + (hasLab ? 2 : 0);
+
     const newCourse = await prisma.course.create({
       data: {
         code,
         title,
         description: description || null,
-        units: parseInt(units, 10),
+        units: finalUnits,
+        hasLab: hasLab || false,
       },
     });
 
@@ -63,20 +67,23 @@ export async function createCourse(data) {
  * Updates an existing course.
  */
 export async function updateCourse(id, data) {
-  const { code, title, description, units } = data;
+  const { code, title, description, units, hasLab } = data;
 
   if (!code || !title || !units) {
     return { success: false, error: "Code, Title and Units are required." };
   }
 
   try {
+    const finalUnits = parseInt(units, 10) + (hasLab ? 2 : 0);
+
     const updatedCourse = await prisma.course.update({
       where: { id },
       data: {
         code,
         title,
         description: description || null,
-        units: parseInt(units, 10),
+        units: finalUnits,
+        hasLab: hasLab || false,
       },
     });
 

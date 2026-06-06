@@ -5,9 +5,9 @@ import { AdminLayout } from "@/components/admin-layout"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { 
-  MapPin, Monitor, Library, Search, Plus, X, Loader2, Building2, 
-  Users, BookOpen, Edit2, Trash2, AlertCircle, Briefcase, 
+import {
+  MapPin, Monitor, Library, Search, Plus, X, Loader2, Building2,
+  Users, BookOpen, Edit2, Trash2, AlertCircle, Briefcase,
   BarChart3, Clock, UserCheck, Building, Calendar as CalendarIcon, Save, Printer
 } from "lucide-react"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
@@ -104,8 +104,8 @@ export default function ResourceManagementPage() {
   // --- FORM DATA STATES ---
   const [roomFormData, setRoomFormData] = useState({ name: "", type: "", building: "", roomNumber: "", capacity: "" })
   const [editRoomFormData, setEditRoomFormData] = useState({ id: "", name: "", type: "", building: "", roomNumber: "", capacity: "" })
-  const [courseFormData, setCourseFormData] = useState({ code: "", title: "", description: "", units: 3 })
-  const [editCourseFormData, setEditCourseFormData] = useState({ id: "", code: "", title: "", description: "", units: 3 })
+  const [courseFormData, setCourseFormData] = useState({ code: "", title: "", description: "", units: 3, hasLab: false })
+  const [editCourseFormData, setEditCourseFormData] = useState({ id: "", code: "", title: "", description: "", units: 3, hasLab: false })
   const [facultyFormData, setFacultyFormData] = useState({ employmentType: "full_time", maxUnitsPerSem: 18 })
   const [assignmentFormData, setAssignmentFormData] = useState({ courseId: "", sectionId: "", facultyId: "", semester: "1st", academicYear: "2024", maxStudents: 40 })
   const [editAssignmentFormData, setEditAssignmentFormData] = useState({ id: "", courseId: "", sectionId: "", facultyId: "", semester: "1st", academicYear: "2024", maxStudents: 40 })
@@ -133,7 +133,7 @@ export default function ResourceManagementPage() {
       if (settingsRes.success && settingsRes.settings) {
         setFacultySemester(settingsRes.settings.activeSemester)
         setFacultyAcademicYear(settingsRes.settings.activeAcademicYear.toString())
-        
+
         // Initialize form data with global settings
         setAssignmentFormData(prev => ({
           ...prev,
@@ -154,7 +154,7 @@ export default function ResourceManagementPage() {
           getFacultyRoster(settingsRes.settings.activeSemester, settingsRes.settings.activeAcademicYear.toString()),
           getPrograms()
         ])
-        
+
         if (roomsRes.success) setRooms(roomsRes.rooms)
         if (coursesRes.success) setCourses(coursesRes.courses)
         if (assignRes.success) setAssignments(assignRes.sections)
@@ -181,7 +181,7 @@ export default function ResourceManagementPage() {
       getFacultyRoster(facultySemester, facultyAcademicYear),
       getPrograms()
     ])
-    
+
     if (roomsRes.success) setRooms(roomsRes.rooms)
     if (coursesRes.success) setCourses(coursesRes.courses)
     if (assignRes.success) setAssignments(assignRes.sections)
@@ -275,7 +275,7 @@ export default function ResourceManagementPage() {
     if (res.success) {
       setCourses([...courses, res.course])
       setIsCourseModalOpen(false)
-      setCourseFormData({ title: "", description: "", units: 3 })
+      setCourseFormData({ code: "", title: "", description: "", units: 3, hasLab: false })
     } else {
       setFormError(res.error)
     }
@@ -289,7 +289,8 @@ export default function ResourceManagementPage() {
       code: course.code,
       title: course.title,
       description: course.description || "",
-      units: course.units
+      units: course.hasLab ? course.units - 2 : course.units,
+      hasLab: course.hasLab || false
     })
     setIsEditCourseModalOpen(true)
   }
@@ -483,40 +484,40 @@ export default function ResourceManagementPage() {
     <AdminLayout title="Resource Management">
       <div className="flex-1 overflow-auto p-6 lg:p-8 relative">
         <div className="max-w-7xl mx-auto space-y-8">
-          
+
           {/* Header Section */}
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
             <div>
               <h2 className="text-3xl font-bold text-slate-900 tracking-tight">Resource Management</h2>
               <p className="text-slate-500 mt-1">Manage the core building blocks of your university schedule.</p>
             </div>
-            
+
             <div className="flex items-center gap-2 p-1 bg-white border border-slate-200 rounded-xl shadow-sm">
-              <button 
+              <button
                 onClick={() => setActiveTab("rooms")}
                 className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${activeTab === 'rooms' ? 'bg-[#115e59] text-white shadow-lg shadow-teal-900/20' : 'text-slate-500 hover:bg-slate-50'}`}
               >
                 <MapPin className="h-4 w-4" /> Rooms
               </button>
-              <button 
+              <button
                 onClick={() => setActiveTab("courses")}
                 className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${activeTab === 'courses' ? 'bg-[#115e59] text-white shadow-lg shadow-teal-900/20' : 'text-slate-500 hover:bg-slate-50'}`}
               >
                 <BookOpen className="h-4 w-4" /> Courses
               </button>
-              <button 
+              <button
                 onClick={() => setActiveTab("faculty")}
                 className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${activeTab === 'faculty' ? 'bg-[#115e59] text-white shadow-lg shadow-teal-900/20' : 'text-slate-500 hover:bg-slate-50'}`}
               >
                 <Users className="h-4 w-4" /> Faculty
               </button>
-              <button 
+              <button
                 onClick={() => setActiveTab("assignments")}
                 className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${activeTab === 'assignments' ? 'bg-[#115e59] text-white shadow-lg shadow-teal-900/20' : 'text-slate-500 hover:bg-slate-50'}`}
               >
                 <Briefcase className="h-4 w-4" /> Assignments
               </button>
-              <button 
+              <button
                 onClick={() => setActiveTab("programs")}
                 className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${activeTab === 'programs' ? 'bg-[#115e59] text-white shadow-lg shadow-teal-900/20' : 'text-slate-500 hover:bg-slate-50'}`}
               >
@@ -527,274 +528,275 @@ export default function ResourceManagementPage() {
 
           {/* Sub-Header with Search & Add Buttons */}
           <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-             <div className="relative w-full sm:w-96">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                <input 
-                  type="text" 
-                  placeholder={`Search ${activeTab}...`} 
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-4 focus:ring-teal-500/10 focus:border-teal-500 transition-all shadow-sm"
-                />
-             </div>
+            <div className="relative w-full sm:w-96">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <input
+                type="text"
+                placeholder={`Search ${activeTab}...`}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-4 focus:ring-teal-500/10 focus:border-teal-500 transition-all shadow-sm"
+              />
+            </div>
 
-             <div className="flex items-center gap-3 w-full sm:w-auto">
-                {activeTab === "faculty" && (
-                   <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-xl border border-slate-200 shadow-sm">
-                      <select 
-                        value={facultySemester} 
-                        onChange={(e) => setFacultySemester(e.target.value)}
-                        className="text-xs font-semibold text-slate-600 focus:outline-none bg-transparent"
-                      >
-                         <option value="1st">1st Sem</option>
-                         <option value="2nd">2nd Sem</option>
-                         <option value="Summer">Summer</option>
-                      </select>
-                      <div className="h-4 w-px bg-slate-200"></div>
-                      <select 
-                        value={facultyAcademicYear} 
-                        onChange={(e) => setFacultyAcademicYear(e.target.value)}
-                        className="text-xs font-semibold text-slate-600 focus:outline-none bg-transparent"
-                      >
-                         <option value="2024">2024-2025</option>
-                         <option value="2025">2025-2026</option>
-                      </select>
-                   </div>
-                )}
-                <Button 
-                  onClick={() => {
-                    if (activeTab === "rooms") setIsRoomModalOpen(true)
-                    if (activeTab === "courses") setIsCourseModalOpen(true)
-                    if (activeTab === "assignments") {
-                      setIsAssignmentModalOpen(true)
-                      setAssignmentWarning(null)
-                    }
-                    if (activeTab === "programs") setIsProgramModalOpen(true)
-                    setFormError(null)
-                  }}
-                  className="bg-[#115e59] hover:bg-teal-900 text-white shadow-lg shadow-teal-900/10 w-full sm:w-auto px-6 h-11 rounded-xl font-semibold"
-                  disabled={activeTab === "faculty"}
-                >
-                  <Plus className="h-4 w-4 mr-2" /> Add {activeTab.slice(0, -1)}
-                </Button>
-             </div>
+            <div className="flex items-center gap-3 w-full sm:w-auto">
+              {activeTab === "faculty" && (
+                <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-xl border border-slate-200 shadow-sm">
+                  <select
+                    value={facultySemester}
+                    onChange={(e) => setFacultySemester(e.target.value)}
+                    className="text-xs font-semibold text-slate-600 focus:outline-none bg-transparent"
+                  >
+                    <option value="1st">1st Sem</option>
+                    <option value="2nd">2nd Sem</option>
+                    <option value="Summer">Summer</option>
+                  </select>
+                  <div className="h-4 w-px bg-slate-200"></div>
+                  <select
+                    value={facultyAcademicYear}
+                    onChange={(e) => setFacultyAcademicYear(e.target.value)}
+                    className="text-xs font-semibold text-slate-600 focus:outline-none bg-transparent"
+                  >
+                    <option value="2024">2024-2025</option>
+                    <option value="2025">2025-2026</option>
+                  </select>
+                </div>
+              )}
+              <Button
+                onClick={() => {
+                  if (activeTab === "rooms") setIsRoomModalOpen(true)
+                  if (activeTab === "courses") setIsCourseModalOpen(true)
+                  if (activeTab === "assignments") {
+                    setIsAssignmentModalOpen(true)
+                    setAssignmentWarning(null)
+                  }
+                  if (activeTab === "programs") setIsProgramModalOpen(true)
+                  setFormError(null)
+                }}
+                className="bg-[#115e59] hover:bg-teal-900 text-white shadow-lg shadow-teal-900/10 w-full sm:w-auto px-6 h-11 rounded-xl font-semibold"
+                disabled={activeTab === "faculty"}
+              >
+                <Plus className="h-4 w-4 mr-2" /> Add {activeTab.slice(0, -1)}
+              </Button>
+            </div>
           </div>
 
           {/* Main Content Area */}
           <Card className="border-slate-200 shadow-xl overflow-hidden bg-white/50 backdrop-blur-sm">
             <CardContent className="p-0">
-               {isLoading ? (
-                  <div className="flex flex-col items-center justify-center py-32 gap-3">
-                     <Loader2 className="h-10 w-10 text-teal-600 animate-spin" />
-                     <p className="text-slate-400 font-semibold uppercase tracking-widest text-xs">Synchronizing Data...</p>
-                  </div>
-               ) : (
-                 <div className="overflow-x-auto">
-                    {activeTab === "rooms" && (
-                      <table className="w-full text-left border-collapse">
-                        <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase text-[10px] font-semibold tracking-widest">
-                          <tr>
-                            <th className="px-6 py-4">Room Name</th>
-                            <th className="px-6 py-4">Type</th>
-                            <th className="px-6 py-4">Building</th>
-                            <th className="px-6 py-4">Capacity</th>
-                            <th className="px-6 py-4 text-right">Actions</th>
+              {isLoading ? (
+                <div className="flex flex-col items-center justify-center py-32 gap-3">
+                  <Loader2 className="h-10 w-10 text-teal-600 animate-spin" />
+                  <p className="text-slate-400 font-semibold uppercase tracking-widest text-xs">Synchronizing Data...</p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  {activeTab === "rooms" && (
+                    <table className="w-full text-left border-collapse">
+                      <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase text-[10px] font-semibold tracking-widest">
+                        <tr>
+                          <th className="px-6 py-4">Room Name</th>
+                          <th className="px-6 py-4">Type</th>
+                          <th className="px-6 py-4">Building</th>
+                          <th className="px-6 py-4">Capacity</th>
+                          <th className="px-6 py-4 text-right">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {rooms.filter(r => r.name.toLowerCase().includes(searchQuery.toLowerCase())).map(room => (
+                          <tr key={room.id} className="hover:bg-slate-50/80 transition-colors bg-white/40">
+                            <td className="px-6 py-4 font-bold text-slate-900 font-mono">{room.name}</td>
+                            <td className="px-6 py-4 text-slate-600 font-medium">{room.type}</td>
+                            <td className="px-6 py-4 text-slate-500 text-sm font-medium"><Building2 className="h-3.5 w-3.5 inline mr-1.5 opacity-50" /> {room.building}</td>
+                            <td className="px-6 py-4">
+                              <Badge variant="secondary" className="bg-teal-50 text-teal-700 border-teal-100 font-semibold">{room.capacity} Pax</Badge>
+                            </td>
+                            <td className="px-6 py-4 text-right">
+                              <div className="flex justify-end gap-1">
+                                <button onClick={() => handleViewRoomScheduleClick(room)} className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all" title="View Schedule"><Clock className="h-4 w-4" /></button>
+                                <button onClick={() => handleEditRoomClick(room)} className="p-2 text-slate-400 hover:text-teal-600 hover:bg-teal-50 rounded-lg transition-all" title="Edit"><Edit2 className="h-4 w-4" /></button>
+                                <button onClick={() => setDeleteTarget({ type: 'room', id: room.id, name: room.name })} className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all" title="Delete"><Trash2 className="h-4 w-4" /></button>
+                              </div>
+                            </td>
                           </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100">
-                          {rooms.filter(r => r.name.toLowerCase().includes(searchQuery.toLowerCase())).map(room => (
-                            <tr key={room.id} className="hover:bg-slate-50/80 transition-colors bg-white/40">
-                              <td className="px-6 py-4 font-bold text-slate-900 font-mono">{room.name}</td>
-                              <td className="px-6 py-4 text-slate-600 font-medium">{room.type}</td>
-                              <td className="px-6 py-4 text-slate-500 text-sm font-medium"><Building2 className="h-3.5 w-3.5 inline mr-1.5 opacity-50" /> {room.building}</td>
-                              <td className="px-6 py-4">
-                                <Badge variant="secondary" className="bg-teal-50 text-teal-700 border-teal-100 font-semibold">{room.capacity} Pax</Badge>
-                              </td>
-                              <td className="px-6 py-4 text-right">
-                                <div className="flex justify-end gap-1">
-                                  <button onClick={() => handleViewRoomScheduleClick(room)} className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all" title="View Schedule"><Clock className="h-4 w-4" /></button>
-                                  <button onClick={() => handleEditRoomClick(room)} className="p-2 text-slate-400 hover:text-teal-600 hover:bg-teal-50 rounded-lg transition-all" title="Edit"><Edit2 className="h-4 w-4" /></button>
-                                  <button onClick={() => setDeleteTarget({ type: 'room', id: room.id, name: room.name })} className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all" title="Delete"><Trash2 className="h-4 w-4" /></button>
-                                </div>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    )}
-
-                    {activeTab === "courses" && (
-                      <table className="w-full text-left border-collapse">
-                        <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase text-[10px] font-semibold tracking-widest">
-                          <tr>
-                            <th className="px-6 py-4">Code</th>
-                            <th className="px-6 py-4">Title</th>
-                            <th className="px-6 py-4">Units</th>
-                            <th className="px-6 py-4 text-right">Actions</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100">
-                          {courses.filter(c => c.code.toLowerCase().includes(searchQuery.toLowerCase()) || c.title.toLowerCase().includes(searchQuery.toLowerCase())).map(course => (
-                            <tr key={course.id} className="hover:bg-slate-50/80 transition-colors bg-white/40">
-                              <td className="px-6 py-4 font-bold text-teal-700 font-mono">{course.code}</td>
-                              <td className="px-6 py-4 font-semibold text-slate-900">{course.title}</td>
-                              <td className="px-6 py-4">
-                                 <Badge className="bg-indigo-50 text-indigo-700 border-indigo-100 font-semibold">{course.units} UNITS</Badge>
-                              </td>
-                              <td className="px-6 py-4 text-right">
-                                <div className="flex justify-end gap-1">
-                                  <button onClick={() => handleEditCourseClick(course)} className="p-2 text-slate-400 hover:text-teal-600 hover:bg-teal-50 rounded-lg transition-all"><Edit2 className="h-4 w-4" /></button>
-                                  <button onClick={() => setDeleteTarget({ type: 'course', id: course.id, name: course.title })} className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"><Trash2 className="h-4 w-4" /></button>
-                                </div>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    )}
-
-                    {activeTab === "faculty" && (
-                      <table className="w-full text-left border-collapse">
-                        <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase text-[10px] font-semibold tracking-widest">
-                          <tr>
-                            <th className="px-6 py-4">Faculty Member</th>
-                            <th className="px-6 py-4">Employment</th>
-                            <th className="px-6 py-4">Workload ({facultySemester})</th>
-                            <th className="px-6 py-4">Availability</th>
-                            <th className="px-6 py-4 text-right">Actions</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100">
-                          {roster.filter(f => f.fullName.toLowerCase().includes(searchQuery.toLowerCase())).map(f => (
-                            <tr key={f.id} className="hover:bg-slate-50/80 transition-colors bg-white/40">
-                              <td className="px-6 py-4">
-                                <div className="flex items-center gap-3">
-                                  <Avatar className="h-9 w-9 border-2 border-white shadow-sm">
-                                    <AvatarFallback className="bg-teal-100 text-teal-700 font-semibold text-xs">{f.fullName.split(' ').map(n => n[0]).join('').substring(0, 2)}</AvatarFallback>
-                                  </Avatar>
-                                  <div>
-                                    <p className="font-semibold text-slate-900 text-sm">{f.fullName}</p>
-                                    <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-tighter">{f.employeeId}</p>
-                                  </div>
-                                </div>
-                              </td>
-                              <td className="px-6 py-4">
-                                 <Badge variant="outline" className="capitalize text-[10px] font-semibold tracking-tight">{f.employmentType.replace('_', ' ')}</Badge>
-                              </td>
-                              <td className="px-6 py-4">
-                                <div className="space-y-1.5 w-32">
-                                  <div className={`flex justify-between text-[10px] font-semibold uppercase tracking-tighter ${f.workload.current > (f.workload.max || 0) ? "text-red-600" : "text-slate-500"}`}>
-                                    <span>{f.workload.current} Units</span>
-                                    <span>/ {f.workload.max || '??'}</span>
-                                  </div>
-                                  <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
-                                     <div 
-                                      className={`h-full transition-all duration-500 ${f.workload.current > (f.workload.max || 0) ? 'bg-red-500' : 'bg-teal-500'}`} 
-                                      style={{ width: `${Math.min((f.workload.current / (f.workload.max || 1)) * 100, 100)}%` }}
-                                     />
-                                  </div>
-                                </div>
-                              </td>
-                              <td className="px-6 py-4">
-                                 <Badge className={`text-[10px] font-semibold uppercase border-none ${f.availabilityStatus === 'Submitted' ? 'bg-green-50 text-green-700' : 'bg-orange-50 text-orange-700'}`}>
-                                    {f.availabilityStatus}
-                                 </Badge>
-                              </td>
-                              <td className="px-6 py-4 text-right">
-                                <div className="flex justify-end gap-1">
-                                  <button onClick={() => handleViewFacultyScheduleClick(f)} className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all" title="View Schedule"><Clock className="h-4 w-4" /></button>
-                                  <button onClick={() => handleEditFacultyClick(f)} className="p-2 text-slate-400 hover:text-teal-600 hover:bg-teal-50 rounded-lg transition-all" title="Edit"><Edit2 className="h-4 w-4" /></button>
-                                  <button onClick={() => setDeleteTarget({ type: 'faculty', id: f.id, name: f.fullName })} className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all" title="Delete"><Trash2 className="h-4 w-4" /></button>
-                                </div>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    )}
-
-                    {activeTab === "assignments" && (
-                      <table className="w-full text-left border-collapse">
-                        <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase text-[10px] font-semibold tracking-widest">
-                          <tr>
-                            <th className="px-6 py-4">Course</th>
-                            <th className="px-6 py-4">Program & Section</th>
-                            <th className="px-6 py-4">Assigned Instructor</th>
-                            <th className="px-6 py-4">Term</th>
-                            <th className="px-6 py-4 text-right">Actions</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100">
-                          {assignments.filter(a => 
-                            (a.courseCode?.toLowerCase() || "").includes(searchQuery.toLowerCase()) || 
-                            (a.courseTitle?.toLowerCase() || "").includes(searchQuery.toLowerCase())
-                          ).map(section => (
-                            <tr key={section.id} className="hover:bg-slate-50/80 transition-colors bg-white/40">
-                              <td className="px-6 py-4">
-                                <p className="font-bold text-slate-900 text-sm leading-tight">{section.courseCode}</p>
-                                <p className="text-[10px] text-slate-500 font-semibold uppercase truncate max-w-[200px]">{section.courseTitle}</p>
-                              </td>
-                              <td className="px-6 py-4 font-bold text-teal-700 font-mono tracking-tighter">
-                                {section.programCode} {section.yearLevel}-{section.sectionName}
-                              </td>
-                              <td className="px-6 py-4">
-                                {section.facultyName ? (
-                                  <div className="flex items-center gap-2 text-sm font-semibold text-slate-700">
-                                    <UserCheck className="h-3.5 w-3.5 text-teal-600" />
-                                    {section.facultyName}
-                                  </div>
-                                ) : (
-                                  <span className="text-xs font-semibold text-slate-300 uppercase tracking-widest italic">Unassigned</span>
-                                )}
-                              </td>
-                              <td className="px-6 py-4">
-                                 <Badge variant="outline" className="text-[10px] font-semibold border-slate-200 text-slate-500">{section.semester} Sem {section.academicYear}</Badge>
-                              </td>
-                              <td className="px-6 py-4 text-right">
-                                <div className="flex justify-end gap-1">
-                                  <button onClick={() => handleEditAssignmentClick(section)} className="p-2 text-slate-400 hover:text-teal-600 hover:bg-teal-50 rounded-lg transition-all"><Edit2 className="h-4 w-4" /></button>
-                                  <button onClick={() => setDeleteTarget({ type: 'assignment', id: section.id, name: `${section.courseCode} for ${section.programCode} ${section.yearLevel}-{section.sectionName}` })} className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"><Trash2 className="h-4 w-4" /></button>
-                                </div>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    )}
-
-                    {activeTab === "programs" && (
-                      <div className="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {programs.map(program => (
-                          <div key={program.id} className="group relative bg-white border border-slate-200 rounded-2xl p-5 hover:border-teal-500 hover:shadow-2xl hover:shadow-teal-900/5 transition-all">
-                             <div className="flex justify-between items-start mb-4">
-                                <Badge className="bg-[#115e59] text-white font-semibold px-3 py-1">{program.code}</Badge>
-                                <button onClick={() => setDeleteTarget({ type: 'program', id: program.id, name: program.code })} className="opacity-0 group-hover:opacity-100 p-1.5 text-slate-300 hover:text-red-600 transition-all"><Trash2 className="h-4 w-4" /></button>
-                             </div>
-                             <h3 className="font-bold text-slate-900 leading-tight mb-4">{program.name}</h3>
-                             <div className="space-y-2">
-                                <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest flex items-center gap-2">Sections <Badge variant="secondary" className="h-4 px-1 text-[9px]">{program.sections.length}</Badge></p>
-                                <div className="flex flex-wrap gap-1.5">
-                                   {program.sections.map(s => (
-                                     <div key={s.id} className="group/sec flex items-center gap-1.5 px-2.5 py-1 bg-slate-50 border border-slate-100 rounded-lg text-xs font-semibold text-slate-700 hover:bg-white hover:border-teal-200 transition-all">
-                                        {s.yearLevel}-{s.name}
-                                        <div className="flex items-center gap-1.5 opacity-0 group-hover/sec:opacity-100 transition-all ml-1">
-                                          <button onClick={() => handleViewSectionScheduleClick(s, program)} className="text-slate-300 hover:text-indigo-500 transition-colors" title="View Schedule"><Clock className="h-3 w-3" /></button>
-                                          <button onClick={() => setDeleteTarget({ type: 'section', id: s.id, name: `${program.code} ${s.yearLevel}-${s.name}`, subId: program.id })} className="text-slate-300 hover:text-red-500 transition-colors" title="Delete Section"><X className="h-3 w-3" /></button>
-                                        </div>
-                                     </div>
-                                   ))}
-                                   <button 
-                                    onClick={() => handleAddSectionClick(program.id)}
-                                    className="px-2 py-1 border border-dashed border-slate-300 rounded-lg text-[10px] font-semibold text-slate-400 hover:border-teal-500 hover:text-teal-600 transition-all"
-                                   >+ NEW</button>
-                                </div>
-                             </div>
-                          </div>
                         ))}
-                      </div>
-                    )}
-                 </div>
-               )}
+                      </tbody>
+                    </table>
+                  )}
+
+                  {activeTab === "courses" && (
+                    <table className="w-full text-left border-collapse">
+                      <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase text-[10px] font-semibold tracking-widest">
+                        <tr>
+                          <th className="px-6 py-4">Code</th>
+                          <th className="px-6 py-4">Title</th>
+                          <th className="px-6 py-4">Units</th>
+                          <th className="px-6 py-4 text-right">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {courses.filter(c => c.code.toLowerCase().includes(searchQuery.toLowerCase()) || c.title.toLowerCase().includes(searchQuery.toLowerCase())).map(course => (
+                          <tr key={course.id} className="hover:bg-slate-50/80 transition-colors bg-white/40">
+                            <td className="px-6 py-4 font-bold text-teal-700 font-mono">{course.code}</td>
+                            <td className="px-6 py-4 font-semibold text-slate-900">{course.title}</td>
+                            <td className="px-6 py-4">
+                              <Badge className="bg-indigo-50 text-indigo-700 border-indigo-100 font-semibold">{course.hasLab ? course.units - 2 : course.units} UNITS</Badge>
+                              {course.hasLab && <Badge variant="outline" className="ml-2 border-indigo-200 text-indigo-500 font-semibold text-[9px] uppercase tracking-widest">W/ LAB</Badge>}
+                            </td>
+                            <td className="px-6 py-4 text-right">
+                              <div className="flex justify-end gap-1">
+                                <button onClick={() => handleEditCourseClick(course)} className="p-2 text-slate-400 hover:text-teal-600 hover:bg-teal-50 rounded-lg transition-all"><Edit2 className="h-4 w-4" /></button>
+                                <button onClick={() => setDeleteTarget({ type: 'course', id: course.id, name: course.title })} className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"><Trash2 className="h-4 w-4" /></button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+
+                  {activeTab === "faculty" && (
+                    <table className="w-full text-left border-collapse">
+                      <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase text-[10px] font-semibold tracking-widest">
+                        <tr>
+                          <th className="px-6 py-4">Faculty Member</th>
+                          <th className="px-6 py-4">Employment</th>
+                          <th className="px-6 py-4">Workload ({facultySemester})</th>
+                          <th className="px-6 py-4">Availability</th>
+                          <th className="px-6 py-4 text-right">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {roster.filter(f => f.fullName.toLowerCase().includes(searchQuery.toLowerCase())).map(f => (
+                          <tr key={f.id} className="hover:bg-slate-50/80 transition-colors bg-white/40">
+                            <td className="px-6 py-4">
+                              <div className="flex items-center gap-3">
+                                <Avatar className="h-9 w-9 border-2 border-white shadow-sm">
+                                  <AvatarFallback className="bg-teal-100 text-teal-700 font-semibold text-xs">{f.fullName.split(' ').map(n => n[0]).join('').substring(0, 2)}</AvatarFallback>
+                                </Avatar>
+                                <div>
+                                  <p className="font-semibold text-slate-900 text-sm">{f.fullName}</p>
+                                  <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-tighter">{f.employeeId}</p>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4">
+                              <Badge variant="outline" className="capitalize text-[10px] font-semibold tracking-tight">{f.employmentType.replace('_', ' ')}</Badge>
+                            </td>
+                            <td className="px-6 py-4">
+                              <div className="space-y-1.5 w-32">
+                                <div className={`flex justify-between text-[10px] font-semibold uppercase tracking-tighter ${f.workload.current > (f.workload.max || 0) ? "text-red-600" : "text-slate-500"}`}>
+                                  <span>{f.workload.current} Units</span>
+                                  <span>/ {f.workload.max || '??'}</span>
+                                </div>
+                                <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+                                  <div
+                                    className={`h-full transition-all duration-500 ${f.workload.current > (f.workload.max || 0) ? 'bg-red-500' : 'bg-teal-500'}`}
+                                    style={{ width: `${Math.min((f.workload.current / (f.workload.max || 1)) * 100, 100)}%` }}
+                                  />
+                                </div>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4">
+                              <Badge className={`text-[10px] font-semibold uppercase border-none ${f.availabilityStatus === 'Submitted' ? 'bg-green-50 text-green-700' : 'bg-orange-50 text-orange-700'}`}>
+                                {f.availabilityStatus}
+                              </Badge>
+                            </td>
+                            <td className="px-6 py-4 text-right">
+                              <div className="flex justify-end gap-1">
+                                <button onClick={() => handleViewFacultyScheduleClick(f)} className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all" title="View Schedule"><Clock className="h-4 w-4" /></button>
+                                <button onClick={() => handleEditFacultyClick(f)} className="p-2 text-slate-400 hover:text-teal-600 hover:bg-teal-50 rounded-lg transition-all" title="Edit"><Edit2 className="h-4 w-4" /></button>
+                                <button onClick={() => setDeleteTarget({ type: 'faculty', id: f.id, name: f.fullName })} className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all" title="Delete"><Trash2 className="h-4 w-4" /></button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+
+                  {activeTab === "assignments" && (
+                    <table className="w-full text-left border-collapse">
+                      <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase text-[10px] font-semibold tracking-widest">
+                        <tr>
+                          <th className="px-6 py-4">Course</th>
+                          <th className="px-6 py-4">Program & Section</th>
+                          <th className="px-6 py-4">Assigned Instructor</th>
+                          <th className="px-6 py-4">Term</th>
+                          <th className="px-6 py-4 text-right">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {assignments.filter(a =>
+                          (a.courseCode?.toLowerCase() || "").includes(searchQuery.toLowerCase()) ||
+                          (a.courseTitle?.toLowerCase() || "").includes(searchQuery.toLowerCase())
+                        ).map(section => (
+                          <tr key={section.id} className="hover:bg-slate-50/80 transition-colors bg-white/40">
+                            <td className="px-6 py-4">
+                              <p className="font-bold text-slate-900 text-sm leading-tight">{section.courseCode}</p>
+                              <p className="text-[10px] text-slate-500 font-semibold uppercase truncate max-w-[200px]">{section.courseTitle}</p>
+                            </td>
+                            <td className="px-6 py-4 font-bold text-teal-700 font-mono tracking-tighter">
+                              {section.programCode} {section.yearLevel}-{section.sectionName}
+                            </td>
+                            <td className="px-6 py-4">
+                              {section.facultyName ? (
+                                <div className="flex items-center gap-2 text-sm font-semibold text-slate-700">
+                                  <UserCheck className="h-3.5 w-3.5 text-teal-600" />
+                                  {section.facultyName}
+                                </div>
+                              ) : (
+                                <span className="text-xs font-semibold text-slate-300 uppercase tracking-widest italic">Unassigned</span>
+                              )}
+                            </td>
+                            <td className="px-6 py-4">
+                              <Badge variant="outline" className="text-[10px] font-semibold border-slate-200 text-slate-500">{section.semester} Sem {section.academicYear}</Badge>
+                            </td>
+                            <td className="px-6 py-4 text-right">
+                              <div className="flex justify-end gap-1">
+                                <button onClick={() => handleEditAssignmentClick(section)} className="p-2 text-slate-400 hover:text-teal-600 hover:bg-teal-50 rounded-lg transition-all"><Edit2 className="h-4 w-4" /></button>
+                                <button onClick={() => setDeleteTarget({ type: 'assignment', id: section.id, name: `${section.courseCode} for ${section.programCode} ${section.yearLevel}-{section.sectionName}` })} className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"><Trash2 className="h-4 w-4" /></button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+
+                  {activeTab === "programs" && (
+                    <div className="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {programs.map(program => (
+                        <div key={program.id} className="group relative bg-white border border-slate-200 rounded-2xl p-5 hover:border-teal-500 hover:shadow-2xl hover:shadow-teal-900/5 transition-all">
+                          <div className="flex justify-between items-start mb-4">
+                            <Badge className="bg-[#115e59] text-white font-semibold px-3 py-1">{program.code}</Badge>
+                            <button onClick={() => setDeleteTarget({ type: 'program', id: program.id, name: program.code })} className="opacity-0 group-hover:opacity-100 p-1.5 text-slate-300 hover:text-red-600 transition-all"><Trash2 className="h-4 w-4" /></button>
+                          </div>
+                          <h3 className="font-bold text-slate-900 leading-tight mb-4">{program.name}</h3>
+                          <div className="space-y-2">
+                            <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest flex items-center gap-2">Sections <Badge variant="secondary" className="h-4 px-1 text-[9px]">{program.sections.length}</Badge></p>
+                            <div className="flex flex-wrap gap-1.5">
+                              {program.sections.map(s => (
+                                <div key={s.id} className="group/sec flex items-center gap-1.5 px-2.5 py-1 bg-slate-50 border border-slate-100 rounded-lg text-xs font-semibold text-slate-700 hover:bg-white hover:border-teal-200 transition-all">
+                                  {s.yearLevel}-{s.name}
+                                  <div className="flex items-center gap-1.5 opacity-0 group-hover/sec:opacity-100 transition-all ml-1">
+                                    <button onClick={() => handleViewSectionScheduleClick(s, program)} className="text-slate-300 hover:text-indigo-500 transition-colors" title="View Schedule"><Clock className="h-3 w-3" /></button>
+                                    <button onClick={() => setDeleteTarget({ type: 'section', id: s.id, name: `${program.code} ${s.yearLevel}-${s.name}`, subId: program.id })} className="text-slate-300 hover:text-red-500 transition-colors" title="Delete Section"><X className="h-3 w-3" /></button>
+                                  </div>
+                                </div>
+                              ))}
+                              <button
+                                onClick={() => handleAddSectionClick(program.id)}
+                                className="px-2 py-1 border border-dashed border-slate-300 rounded-lg text-[10px] font-semibold text-slate-400 hover:border-teal-500 hover:text-teal-600 transition-all"
+                              >+ NEW</button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
@@ -821,13 +823,13 @@ export default function ResourceManagementPage() {
                 <label className="text-xs font-bold text-slate-500 uppercase flex items-center gap-2">
                   <UserCheck className="h-3.5 w-3.5" /> Program Code *
                 </label>
-                <input required value={programFormData.code} onChange={e => setProgramFormData({...programFormData, code: e.target.value})} placeholder="e.g. BSIT" className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 uppercase transition-all shadow-sm" />
+                <input required value={programFormData.code} onChange={e => setProgramFormData({ ...programFormData, code: e.target.value })} placeholder="e.g. BSIT" className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 uppercase transition-all shadow-sm" />
               </div>
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-slate-500 uppercase flex items-center gap-2">
                   <Briefcase className="h-3.5 w-3.5" /> Program Name *
                 </label>
-                <input required value={programFormData.name} onChange={e => setProgramFormData({...programFormData, name: e.target.value})} placeholder="e.g. Bachelor of Science in Information Technology" className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all shadow-sm" />
+                <input required value={programFormData.name} onChange={e => setProgramFormData({ ...programFormData, name: e.target.value })} placeholder="e.g. Bachelor of Science in Information Technology" className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all shadow-sm" />
               </div>
               <div className="pt-4 flex justify-end gap-3 border-t border-slate-100">
                 <Button type="button" variant="ghost" onClick={() => setIsProgramModalOpen(false)} disabled={isSubmitting} className="text-slate-500 hover:bg-slate-50">Cancel</Button>
@@ -859,13 +861,13 @@ export default function ResourceManagementPage() {
                 <label className="text-xs font-bold text-slate-500 uppercase flex items-center gap-2">
                   <BarChart3 className="h-3.5 w-3.5" /> Year Level *
                 </label>
-                <input type="number" min="1" max="5" required value={sectionFormData.yearLevel} onChange={e => setSectionFormData({...sectionFormData, yearLevel: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all shadow-sm" />
+                <input type="number" min="1" max="5" required value={sectionFormData.yearLevel} onChange={e => setSectionFormData({ ...sectionFormData, yearLevel: e.target.value })} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all shadow-sm" />
               </div>
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-slate-500 uppercase flex items-center gap-2">
                   <Clock className="h-3.5 w-3.5" /> Section Block *
                 </label>
-                <input required value={sectionFormData.name} onChange={e => setSectionFormData({...sectionFormData, name: e.target.value})} placeholder="e.g. A" className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 uppercase transition-all shadow-sm" />
+                <input required value={sectionFormData.name} onChange={e => setSectionFormData({ ...sectionFormData, name: e.target.value })} placeholder="e.g. A" className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 uppercase transition-all shadow-sm" />
               </div>
               <div className="pt-4 flex justify-end gap-3 border-t border-slate-100">
                 <Button type="button" variant="ghost" onClick={() => setIsSectionModalOpen(false)} disabled={isSubmitting} className="text-slate-500 hover:bg-slate-50">Cancel</Button>
@@ -897,7 +899,7 @@ export default function ResourceManagementPage() {
                 <label className="text-xs font-bold text-slate-500 uppercase flex items-center gap-2">
                   <MapPin className="h-3.5 w-3.5" /> Room Name *
                 </label>
-                <input required value={roomFormData.name} onChange={e => setRoomFormData({...roomFormData, name: e.target.value})} placeholder="e.g. RM-101" className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 uppercase transition-all shadow-sm" />
+                <input required value={roomFormData.name} onChange={e => setRoomFormData({ ...roomFormData, name: e.target.value })} placeholder="e.g. RM-101" className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 uppercase transition-all shadow-sm" />
               </div>
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-slate-500 uppercase flex items-center gap-2">
@@ -918,7 +920,7 @@ export default function ResourceManagementPage() {
                 <label className="text-xs font-bold text-slate-500 uppercase flex items-center gap-2">
                   <Building className="h-3.5 w-3.5" /> Building *
                 </label>
-                <select required value={roomFormData.building} onChange={(e) => setRoomFormData({...roomFormData, building: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all shadow-sm bg-white">
+                <select required value={roomFormData.building} onChange={(e) => setRoomFormData({ ...roomFormData, building: e.target.value })} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all shadow-sm bg-white">
                   <option value="">Select Building</option>
                   {BUILDINGS.map(b => <option key={b} value={b}>{b}</option>)}
                 </select>
@@ -927,7 +929,7 @@ export default function ResourceManagementPage() {
                 <label className="text-xs font-bold text-slate-500 uppercase flex items-center gap-2">
                   <Clock className="h-3.5 w-3.5" /> Room Number *
                 </label>
-                <input type="number" required max="99999" value={roomFormData.roomNumber} onChange={(e) => setRoomFormData({...roomFormData, roomNumber: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all shadow-sm" />
+                <input type="number" required max="99999" value={roomFormData.roomNumber} onChange={(e) => setRoomFormData({ ...roomFormData, roomNumber: e.target.value })} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all shadow-sm" />
               </div>
               <div className="pt-4 flex justify-end gap-3 border-t border-slate-100">
                 <Button type="button" variant="ghost" onClick={() => setIsRoomModalOpen(false)} disabled={isSubmitting} className="text-slate-500 hover:bg-slate-50">Cancel</Button>
@@ -963,16 +965,16 @@ export default function ResourceManagementPage() {
                 <label className="text-xs font-bold text-slate-500 uppercase flex items-center gap-2">
                   <MapPin className="h-3.5 w-3.5" /> Room Name *
                 </label>
-                <input required value={editRoomFormData.name} onChange={e => setEditRoomFormData({...editRoomFormData, name: e.target.value})} placeholder="e.g. RM-101" className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 uppercase transition-all shadow-sm" />
+                <input required value={editRoomFormData.name} onChange={e => setEditRoomFormData({ ...editRoomFormData, name: e.target.value })} placeholder="e.g. RM-101" className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 uppercase transition-all shadow-sm" />
               </div>
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-slate-500 uppercase flex items-center gap-2">
                   <Monitor className="h-3.5 w-3.5" /> Room Type *
                 </label>
-                <select 
-                  required 
-                  value={editRoomFormData.type} 
-                  onChange={(e) => handleRoomTypeChange(e, true)} 
+                <select
+                  required
+                  value={editRoomFormData.type}
+                  onChange={(e) => handleRoomTypeChange(e, true)}
                   className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all bg-white shadow-sm"
                 >
                   {ROOM_TYPES.map(t => (
@@ -984,10 +986,10 @@ export default function ResourceManagementPage() {
                 <label className="text-xs font-bold text-slate-500 uppercase flex items-center gap-2">
                   <Building className="h-3.5 w-3.5" /> Building *
                 </label>
-                <select 
-                  required 
-                  value={editRoomFormData.building} 
-                  onChange={(e) => setEditRoomFormData({...editRoomFormData, building: e.target.value})} 
+                <select
+                  required
+                  value={editRoomFormData.building}
+                  onChange={(e) => setEditRoomFormData({ ...editRoomFormData, building: e.target.value })}
                   className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all bg-white shadow-sm"
                 >
                   <option value="">Select Building</option>
@@ -1000,28 +1002,28 @@ export default function ResourceManagementPage() {
                 <label className="text-xs font-bold text-slate-500 uppercase flex items-center gap-2">
                   <Clock className="h-3.5 w-3.5" /> Room Number *
                 </label>
-                <input 
-                  type="number" 
-                  required 
-                  max="99999" 
-                  value={editRoomFormData.roomNumber} 
-                  onChange={(e) => setEditRoomFormData({...editRoomFormData, roomNumber: e.target.value})} 
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all shadow-sm" 
+                <input
+                  type="number"
+                  required
+                  max="99999"
+                  value={editRoomFormData.roomNumber}
+                  onChange={(e) => setEditRoomFormData({ ...editRoomFormData, roomNumber: e.target.value })}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all shadow-sm"
                 />
               </div>
               <div className="pt-6 border-t border-slate-100 flex justify-end gap-3">
-                <Button 
-                  type="button" 
-                  variant="ghost" 
-                  onClick={() => setIsEditRoomModalOpen(false)} 
-                  disabled={isSubmitting} 
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => setIsEditRoomModalOpen(false)}
+                  disabled={isSubmitting}
                   className="text-slate-500 hover:bg-slate-50"
                 >
                   Cancel
                 </Button>
-                <Button 
-                  type="submit" 
-                  className="bg-[#115e59] hover:bg-teal-900 text-white shadow-lg shadow-teal-900/10 px-6 font-semibold" 
+                <Button
+                  type="submit"
+                  className="bg-[#115e59] hover:bg-teal-900 text-white shadow-lg shadow-teal-900/10 px-6 font-semibold"
                   disabled={isSubmitting}
                 >
                   {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save Changes"}
@@ -1051,26 +1053,30 @@ export default function ResourceManagementPage() {
                 <label className="text-xs font-bold text-slate-500 uppercase flex items-center gap-2">
                   <BookOpen className="h-3.5 w-3.5" /> Subject Code *
                 </label>
-                <input type="text" required value={courseFormData.code} onChange={(e) => setCourseFormData({...courseFormData, code: e.target.value})} placeholder="e.g. COMP-101" className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 uppercase transition-all shadow-sm" />
+                <input type="text" required value={courseFormData.code} onChange={(e) => setCourseFormData({ ...courseFormData, code: e.target.value })} placeholder="e.g. COMP-101" className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 uppercase transition-all shadow-sm" />
               </div>
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-slate-500 uppercase flex items-center gap-2">
                   <Library className="h-3.5 w-3.5" /> Course Title *
                 </label>
-                <input type="text" required value={courseFormData.title} onChange={(e) => setCourseFormData({...courseFormData, title: e.target.value})} placeholder="e.g. Computer Programming 1" className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all shadow-sm" />
+                <input type="text" required value={courseFormData.title} onChange={(e) => setCourseFormData({ ...courseFormData, title: e.target.value })} placeholder="e.g. Computer Programming 1" className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all shadow-sm" />
               </div>
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-slate-500 uppercase flex items-center gap-2">
                   <Edit2 className="h-3.5 w-3.5" /> Description
                 </label>
-                <textarea value={courseFormData.description} onChange={(e) => setCourseFormData({...courseFormData, description: e.target.value})} placeholder="Optional description..." rows={3} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all shadow-sm resize-none" />
+                <textarea value={courseFormData.description} onChange={(e) => setCourseFormData({ ...courseFormData, description: e.target.value })} placeholder="Optional description..." rows={3} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all shadow-sm resize-none" />
               </div>
 
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-slate-500 uppercase flex items-center gap-2">
                   <BarChart3 className="h-3.5 w-3.5" /> Units *
                 </label>
-                <input type="number" required min="1" max="6" value={courseFormData.units} onChange={(e) => setCourseFormData({...courseFormData, units: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all shadow-sm" />
+                <input type="number" required min="1" max="6" value={courseFormData.units} onChange={(e) => setCourseFormData({ ...courseFormData, units: e.target.value })} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all shadow-sm" />
+              </div>
+              <div className="flex items-center gap-2 pt-2 pb-1">
+                <input type="checkbox" id="add-has-lab" checked={courseFormData.hasLab} onChange={(e) => setCourseFormData({ ...courseFormData, hasLab: e.target.checked })} className="h-4 w-4 rounded border-slate-300 text-teal-600 focus:ring-teal-600" />
+                <label htmlFor="add-has-lab" className="text-sm font-semibold text-slate-700 cursor-pointer">Course has a Lab component</label>
               </div>
               <div className="pt-4 flex justify-end gap-3 border-t border-slate-100">
                 <Button type="button" variant="ghost" onClick={() => setIsCourseModalOpen(false)} disabled={isSubmitting} className="text-slate-500 hover:bg-slate-50">Cancel</Button>
@@ -1102,20 +1108,24 @@ export default function ResourceManagementPage() {
                 <label className="text-xs font-bold text-slate-500 uppercase flex items-center gap-2">
                   <BookOpen className="h-3.5 w-3.5" /> Subject Code *
                 </label>
-                <input type="text" required value={editCourseFormData.code} onChange={(e) => setEditCourseFormData({...editCourseFormData, code: e.target.value})} placeholder="e.g. COMP-101" className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 uppercase transition-all shadow-sm" />
+                <input type="text" required value={editCourseFormData.code} onChange={(e) => setEditCourseFormData({ ...editCourseFormData, code: e.target.value })} placeholder="e.g. COMP-101" className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 uppercase transition-all shadow-sm" />
               </div>
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-slate-500 uppercase flex items-center gap-2">
                   <BookOpen className="h-3.5 w-3.5" /> Course Title *
                 </label>
-                <input type="text" required value={editCourseFormData.title} onChange={(e) => setEditCourseFormData({...editCourseFormData, title: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all shadow-sm" />
+                <input type="text" required value={editCourseFormData.title} onChange={(e) => setEditCourseFormData({ ...editCourseFormData, title: e.target.value })} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all shadow-sm" />
               </div>
 
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-slate-500 uppercase flex items-center gap-2">
                   <BarChart3 className="h-3.5 w-3.5" /> Units *
                 </label>
-                <input type="number" required min="1" max="6" value={editCourseFormData.units} onChange={(e) => setEditCourseFormData({...editCourseFormData, units: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all shadow-sm" />
+                <input type="number" required min="1" max="6" value={editCourseFormData.units} onChange={(e) => setEditCourseFormData({ ...editCourseFormData, units: e.target.value })} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all shadow-sm" />
+              </div>
+              <div className="flex items-center gap-2 pt-2 pb-1">
+                <input type="checkbox" id="edit-has-lab" checked={editCourseFormData.hasLab} onChange={(e) => setEditCourseFormData({ ...editCourseFormData, hasLab: e.target.checked })} className="h-4 w-4 rounded border-slate-300 text-teal-600 focus:ring-teal-600" />
+                <label htmlFor="edit-has-lab" className="text-sm font-semibold text-slate-700 cursor-pointer">Course has a Lab component</label>
               </div>
               <div className="pt-6 border-t border-slate-100 flex justify-end gap-3">
                 <Button type="button" variant="ghost" onClick={() => setIsEditCourseModalOpen(false)} disabled={isSubmitting} className="text-slate-500 hover:bg-slate-50">Cancel</Button>
@@ -1196,22 +1206,22 @@ export default function ResourceManagementPage() {
                   </div>
                 </div>
               )}
-              
+
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-slate-500 uppercase flex items-center gap-2">
                   <BookOpen className="h-3.5 w-3.5" /> Course *
                 </label>
-                <select required value={assignmentFormData.courseId} onChange={(e) => setAssignmentFormData({...assignmentFormData, courseId: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all shadow-sm bg-white">
+                <select required value={assignmentFormData.courseId} onChange={(e) => setAssignmentFormData({ ...assignmentFormData, courseId: e.target.value })} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all shadow-sm bg-white">
                   <option value="">Select Course</option>
                   {courses.map(c => <option key={c.id} value={c.id}>{c.code} - {c.title}</option>)}
                 </select>
               </div>
-              
+
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-slate-500 uppercase flex items-center gap-2">
                   <Users className="h-3.5 w-3.5" /> Program & Section *
                 </label>
-                <select required value={assignmentFormData.sectionId} onChange={(e) => setAssignmentFormData({...assignmentFormData, sectionId: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all shadow-sm bg-white">
+                <select required value={assignmentFormData.sectionId} onChange={(e) => setAssignmentFormData({ ...assignmentFormData, sectionId: e.target.value })} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all shadow-sm bg-white">
                   <option value="">Select Section</option>
                   {programs.map(p => <optgroup key={p.id} label={p.code}>{p.sections.map(s => <option key={s.id} value={s.id}>{p.code} - {s.yearLevel}{s.name}</option>)}</optgroup>)}
                 </select>
@@ -1221,7 +1231,7 @@ export default function ResourceManagementPage() {
                 <label className="text-xs font-bold text-slate-500 uppercase flex items-center gap-2">
                   <UserCheck className="h-3.5 w-3.5" /> Faculty
                 </label>
-                <select value={assignmentFormData.facultyId} onChange={(e) => setAssignmentFormData({...assignmentFormData, facultyId: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all shadow-sm bg-white">
+                <select value={assignmentFormData.facultyId} onChange={(e) => setAssignmentFormData({ ...assignmentFormData, facultyId: e.target.value })} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all shadow-sm bg-white">
                   <option value="">Unassigned</option>
                   {roster.filter(f => f.profileId && f.employmentType !== "not assigned yet" && f.workload.max !== null).map(f => <option key={f.profileId} value={f.profileId}>{f.fullName}</option>)}
                 </select>
@@ -1232,7 +1242,7 @@ export default function ResourceManagementPage() {
                   <label className="text-xs font-bold text-slate-500 uppercase flex items-center gap-2">
                     <CalendarIcon className="h-3.5 w-3.5" /> Semester *
                   </label>
-                  <select required value={assignmentFormData.semester} onChange={(e) => setAssignmentFormData({...assignmentFormData, semester: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all shadow-sm bg-white">
+                  <select required value={assignmentFormData.semester} onChange={(e) => setAssignmentFormData({ ...assignmentFormData, semester: e.target.value })} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all shadow-sm bg-white">
                     <option value="1st">1st Semester</option>
                     <option value="2nd">2nd Semester</option>
                     <option value="Summer">Summer</option>
@@ -1242,15 +1252,15 @@ export default function ResourceManagementPage() {
                   <label className="text-xs font-bold text-slate-500 uppercase flex items-center gap-2">
                     <Clock className="h-3.5 w-3.5" /> Year *
                   </label>
-                  <input type="number" required value={assignmentFormData.academicYear} onChange={(e) => setAssignmentFormData({...assignmentFormData, academicYear: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all shadow-sm" />
+                  <input type="number" required value={assignmentFormData.academicYear} onChange={(e) => setAssignmentFormData({ ...assignmentFormData, academicYear: e.target.value })} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all shadow-sm" />
                 </div>
               </div>
-              
+
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-slate-500 uppercase flex items-center gap-2">
                   <Users className="h-3.5 w-3.5" /> Max Students
                 </label>
-                <input type="number" value={assignmentFormData.maxStudents} onChange={(e) => setAssignmentFormData({...assignmentFormData, maxStudents: e.target.value})} placeholder="Optional" className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all shadow-sm" />
+                <input type="number" value={assignmentFormData.maxStudents} onChange={(e) => setAssignmentFormData({ ...assignmentFormData, maxStudents: e.target.value })} placeholder="Optional" className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all shadow-sm" />
               </div>
 
               <div className="pt-4 flex justify-end gap-3 border-t border-slate-100">
@@ -1294,17 +1304,17 @@ export default function ResourceManagementPage() {
                 <label className="text-xs font-bold text-slate-500 uppercase flex items-center gap-2">
                   <BookOpen className="h-3.5 w-3.5" /> Course *
                 </label>
-                <select required value={editAssignmentFormData.courseId} onChange={(e) => setEditAssignmentFormData({...editAssignmentFormData, courseId: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all shadow-sm bg-white">
+                <select required value={editAssignmentFormData.courseId} onChange={(e) => setEditAssignmentFormData({ ...editAssignmentFormData, courseId: e.target.value })} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all shadow-sm bg-white">
                   <option value="">Select Course</option>
                   {courses.map(c => <option key={c.id} value={c.id}>{c.code} - {c.title}</option>)}
                 </select>
               </div>
-              
+
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-slate-500 uppercase flex items-center gap-2">
                   <Users className="h-3.5 w-3.5" /> Program & Section *
                 </label>
-                <select required value={editAssignmentFormData.sectionId} onChange={(e) => setEditAssignmentFormData({...editAssignmentFormData, sectionId: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all shadow-sm bg-white">
+                <select required value={editAssignmentFormData.sectionId} onChange={(e) => setEditAssignmentFormData({ ...editAssignmentFormData, sectionId: e.target.value })} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all shadow-sm bg-white">
                   <option value="">Select Section</option>
                   {programs.map(p => <optgroup key={p.id} label={p.code}>{p.sections.map(s => <option key={s.id} value={s.id}>{p.code} - {s.yearLevel}{s.name}</option>)}</optgroup>)}
                 </select>
@@ -1314,7 +1324,7 @@ export default function ResourceManagementPage() {
                 <label className="text-xs font-bold text-slate-500 uppercase flex items-center gap-2">
                   <UserCheck className="h-3.5 w-3.5" /> Faculty
                 </label>
-                <select value={editAssignmentFormData.facultyId} onChange={(e) => setEditAssignmentFormData({...editAssignmentFormData, facultyId: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all shadow-sm bg-white">
+                <select value={editAssignmentFormData.facultyId} onChange={(e) => setEditAssignmentFormData({ ...editAssignmentFormData, facultyId: e.target.value })} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all shadow-sm bg-white">
                   <option value="">Unassigned</option>
                   {roster.filter(f => f.profileId && f.employmentType !== "not assigned yet" && f.workload.max !== null).map(f => <option key={f.profileId} value={f.profileId}>{f.fullName}</option>)}
                 </select>
@@ -1325,7 +1335,7 @@ export default function ResourceManagementPage() {
                   <label className="text-xs font-bold text-slate-500 uppercase flex items-center gap-2">
                     <CalendarIcon className="h-3.5 w-3.5" /> Semester *
                   </label>
-                  <select required value={editAssignmentFormData.semester} onChange={(e) => setEditAssignmentFormData({...editAssignmentFormData, semester: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all shadow-sm bg-white">
+                  <select required value={editAssignmentFormData.semester} onChange={(e) => setEditAssignmentFormData({ ...editAssignmentFormData, semester: e.target.value })} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all shadow-sm bg-white">
                     <option value="1st">1st Semester</option>
                     <option value="2nd">2nd Semester</option>
                     <option value="Summer">Summer</option>
@@ -1335,7 +1345,7 @@ export default function ResourceManagementPage() {
                   <label className="text-xs font-bold text-slate-500 uppercase flex items-center gap-2">
                     <Clock className="h-3.5 w-3.5" /> Year *
                   </label>
-                  <input type="number" required value={editAssignmentFormData.academicYear} onChange={(e) => setEditAssignmentFormData({...editAssignmentFormData, academicYear: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all shadow-sm" />
+                  <input type="number" required value={editAssignmentFormData.academicYear} onChange={(e) => setEditAssignmentFormData({ ...editAssignmentFormData, academicYear: e.target.value })} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all shadow-sm" />
                 </div>
               </div>
 
@@ -1343,7 +1353,7 @@ export default function ResourceManagementPage() {
                 <label className="text-xs font-bold text-slate-500 uppercase flex items-center gap-2">
                   <Users className="h-3.5 w-3.5" /> Max Students
                 </label>
-                <input type="number" value={editAssignmentFormData.maxStudents} onChange={(e) => setEditAssignmentFormData({...editAssignmentFormData, maxStudents: e.target.value})} placeholder="Optional" className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all shadow-sm" />
+                <input type="number" value={editAssignmentFormData.maxStudents} onChange={(e) => setEditAssignmentFormData({ ...editAssignmentFormData, maxStudents: e.target.value })} placeholder="Optional" className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all shadow-sm" />
               </div>
 
               <div className="pt-6 border-t border-slate-100 flex justify-end gap-3">
@@ -1367,7 +1377,7 @@ export default function ResourceManagementPage() {
               <p className="text-sm text-slate-500 mb-8 leading-relaxed font-medium">
                 Are you sure you want to delete <span className="font-bold text-slate-900">"{deleteTarget.name}"</span>? This action is permanent and cannot be undone.
               </p>
-              
+
               <div className="flex gap-3 justify-center">
                 <Button
                   variant="ghost"
@@ -1409,11 +1419,11 @@ export default function ResourceManagementPage() {
                 )}
               </div>
               <div className="flex items-center gap-3">
-                <Button 
+                <Button
                   onClick={() => {
                     window.print()
                   }}
-                  variant="outline" 
+                  variant="outline"
                   className="hidden md:flex border-slate-200 text-slate-700 bg-white shadow-sm font-semibold hover:bg-slate-50"
                   disabled={viewingRoomSchedule.isLoading || !viewingRoomSchedule.schedules?.length}
                 >
@@ -1494,7 +1504,7 @@ export default function ResourceManagementPage() {
                           <div className="mt-auto space-y-1">
                             <div className="flex items-center gap-1.5 text-[9px] font-semibold opacity-60 text-slate-600 print:opacity-100">
                               <CalendarIcon className="w-2.5 h-2.5" />
-                              <span>{new Date(item.startTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} - {new Date(item.endTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                              <span>{new Date(item.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - {new Date(item.endTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                             </div>
                             <div className="flex items-center gap-1.5 text-[9px] font-semibold print:opacity-100">
                               <UserCheck className="w-2.5 h-2.5 text-slate-600" />
@@ -1530,11 +1540,11 @@ export default function ResourceManagementPage() {
                 )}
               </div>
               <div className="flex items-center gap-3">
-                <Button 
+                <Button
                   onClick={() => {
                     window.print()
                   }}
-                  variant="outline" 
+                  variant="outline"
                   className="hidden md:flex border-slate-200 text-slate-700 bg-white shadow-sm font-semibold hover:bg-slate-50"
                   disabled={viewingFacultySchedule.isLoading || !viewingFacultySchedule.schedules?.length}
                 >
@@ -1615,7 +1625,7 @@ export default function ResourceManagementPage() {
                           <div className="mt-auto space-y-1">
                             <div className="flex items-center gap-1.5 text-[9px] font-semibold opacity-60 text-slate-600 print:opacity-100">
                               <CalendarIcon className="w-2.5 h-2.5" />
-                              <span>{new Date(item.startTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} - {new Date(item.endTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                              <span>{new Date(item.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - {new Date(item.endTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                             </div>
                             <div className="flex items-center gap-1.5 text-[9px] font-semibold print:opacity-100">
                               <MapPin className="w-2.5 h-2.5 text-slate-600" />
@@ -1651,11 +1661,11 @@ export default function ResourceManagementPage() {
                 )}
               </div>
               <div className="flex items-center gap-3">
-                <Button 
+                <Button
                   onClick={() => {
                     window.print()
                   }}
-                  variant="outline" 
+                  variant="outline"
                   className="hidden md:flex border-slate-200 text-slate-700 bg-white shadow-sm font-semibold hover:bg-slate-50"
                   disabled={viewingSectionSchedule.isLoading || !viewingSectionSchedule.schedules?.length}
                 >
@@ -1733,7 +1743,7 @@ export default function ResourceManagementPage() {
                           <div className="mt-auto space-y-1">
                             <div className="flex items-center gap-1.5 text-[9px] font-semibold opacity-60 text-slate-600 print:opacity-100">
                               <CalendarIcon className="w-2.5 h-2.5" />
-                              <span>{new Date(item.startTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} - {new Date(item.endTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                              <span>{new Date(item.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - {new Date(item.endTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                             </div>
                             <div className="flex items-center gap-1.5 text-[9px] font-semibold print:opacity-100">
                               <MapPin className="w-2.5 h-2.5 text-slate-600" />
