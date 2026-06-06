@@ -310,7 +310,7 @@ export default function ResourceManagementPage() {
       employmentType: faculty.employmentType !== "not assigned yet" ? faculty.employmentType : "full_time",
       maxUnitsPerSem: faculty.workload.max || 18
     })
-    setIsFacultyModalOpen(true)
+    setIsEditFacultyModalOpen(true)
   }
 
   const handleViewFacultyScheduleClick = async (faculty) => {
