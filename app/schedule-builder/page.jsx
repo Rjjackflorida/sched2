@@ -382,10 +382,21 @@ export default function ScheduleBuilderPage() {
                         <div className="p-2 border-r border-slate-200 flex items-center justify-center text-[10px] font-black text-slate-400 bg-slate-50/50 group-hover:bg-slate-100 transition-colors uppercase">{format12H(time)}</div>
                         {DAYS.map(day => {
                           const isUnavailable = facultyAvailability.has(`${day}-${time}`)
-                          const isBusy = isFacultyBusy(day, time, draggedItem?.type === 'existing' ? draggedItem.data.id : null)
                           const assignRef = draggedItem ? (draggedItem.type === 'new' ? draggedItem.data : draggedItem.data.section) : null;
+                          const isBusy = isFacultyBusy(day, time, draggedItem?.type === 'existing' ? draggedItem.data.id : null)
                           const isSectionConflict = assignRef && isSectionBusy(day, time, assignRef.sectionId, draggedItem?.type === 'existing' ? draggedItem.data.id : null)
                           
+                          let goesPastClosing = false;
+                          if (assignRef) {
+                            const [h, m] = time.split(':').map(Number)
+                            const durationHours = draggedItem.type === 'new' ? draggedItem.data.units : draggedItem.data.section.course.units;
+                            const endH = h + durationHours;
+                            if (endH > 21 || (endH === 21 && m > 0)) goesPastClosing = true;
+                          }
+
+                          const isInvalidDrop = draggedItem && (isUnavailable || isBusy || isSectionConflict || goesPastClosing);
+                          const isValidDrop = draggedItem && !isInvalidDrop;
+
                           const existingSched = allSchedules.find(s => 
                             s.section.facultyId === selectedFaculty.profileId &&
                             s.dayOfWeek === day &&
@@ -398,7 +409,12 @@ export default function ScheduleBuilderPage() {
                           const blockHeight = units * 2;
 
                           return (
-                            <div key={`${day}-${time}`} onDragOver={handleDragOver} onDrop={(e) => handleDrop(e, day, time)} className={`border-r border-slate-100 relative transition-all duration-150 ${isUnavailable ? 'bg-slate-200 diagonal-stripes cursor-not-allowed' : 'bg-white'} ${isSectionConflict && !isBusy ? 'bg-red-50 border-red-200' : ''} ${!isUnavailable && !isBusy && !isSectionConflict && draggedItem ? 'hover:bg-teal-50 cursor-pointer ring-inset hover:ring-2 hover:ring-teal-400 shadow-inner' : ''}`}>
+                            <div 
+                              key={`${day}-${time}`} 
+                              onDragOver={isInvalidDrop ? undefined : handleDragOver} 
+                              onDrop={isInvalidDrop ? undefined : (e) => handleDrop(e, day, time)} 
+                              className={`border-r border-slate-100 relative transition-all duration-150 ${!draggedItem && isUnavailable ? 'bg-slate-200 diagonal-stripes cursor-not-allowed' : ''} ${!draggedItem && !isUnavailable ? 'bg-white' : ''} ${isInvalidDrop ? 'bg-red-50 diagonal-stripes border-red-200 opacity-80 cursor-not-allowed' : ''} ${isValidDrop ? 'bg-teal-50/50 ring-inset ring-1 ring-teal-100 hover:bg-teal-100 hover:ring-2 hover:ring-teal-500 cursor-pointer shadow-inner' : ''}`}
+                            >
                                {existingSched && (
                                  <div draggable onDragStart={(e) => handleDragStart(e, existingSched, 'existing')} className={`absolute inset-x-2 top-2 z-20 bg-[#115e59] text-white rounded-3xl shadow-2xl p-4 flex flex-col group/block overflow-hidden cursor-grab active:cursor-grabbing border border-teal-900/50 ring-4 ring-white/10 ${draggedItem?.data?.id === existingSched.id ? 'opacity-10 scale-95' : 'opacity-100'}`} style={{ height: `calc(${blockHeight * 100}% - 16px)` }}>
                                     <div className="flex justify-between items-start mb-2">
