@@ -20,7 +20,8 @@ import {
   Mail,
   Shield,
   Key,
-  UserCheck
+  UserCheck,
+  CheckCircle2
 } from "lucide-react"
 import { getUsers, createUser, updateUser, toggleUserStatus, deleteUser } from "@/app/actions/user"
 
@@ -50,7 +51,14 @@ export default function UserManagementPage() {
     confirmPassword: ""
   });
   const [formError, setFormError] = useState(null);
-  const [formSuccess, setFormSuccess] = useState(false);
+
+  // Toast State
+  const [toast, setToast] = useState(null);
+
+  const showToast = (message, type = "success") => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3000);
+  };
 
   useEffect(() => {
     fetchUsers();
@@ -76,7 +84,6 @@ export default function UserManagementPage() {
       confirmPassword: ""
     });
     setFormError(null);
-    setFormSuccess(false);
     setIsModalOpen(true);
   };
 
@@ -91,14 +98,12 @@ export default function UserManagementPage() {
       confirmPassword: ""
     });
     setFormError(null);
-    setFormSuccess(false);
     setIsModalOpen(true);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setFormError(null);
-    setFormSuccess(false);
 
     // Validation for Edit Password
     if (editingUser && formData.password) {
@@ -119,13 +124,13 @@ export default function UserManagementPage() {
     }
 
     if (res.success) {
-      setFormSuccess(true);
+      showToast(editingUser ? "User successfully updated!" : "User successfully created! Default password: 12345678", "success");
       if (!editingUser) {
           // Reset form on create
           setFormData({ firstName: "", lastName: "", email: "", role: "faculty", password: "", confirmPassword: "" });
       }
       fetchUsers();
-      setTimeout(() => setIsModalOpen(false), 1500);
+      setIsModalOpen(false);
     } else {
       setFormError(res.error);
     }
@@ -138,6 +143,7 @@ export default function UserManagementPage() {
     setToggleError(null);
     const res = await toggleUserStatus(toggleTarget.id, !toggleTarget.isActive);
     if (res.success) {
+      showToast(`User successfully ${!toggleTarget.isActive ? 'activated' : 'deactivated'}.`, "success");
       fetchUsers();
       setToggleTarget(null);
     } else {
@@ -151,10 +157,11 @@ export default function UserManagementPage() {
     setIsSubmitting(true);
     const res = await deleteUser(deleteTarget.id);
     if (res.success) {
+      showToast("User successfully deleted.", "success");
       fetchUsers();
       setDeleteTarget(null);
     } else {
-        alert(res.error);
+      showToast(res.error, "error");
     }
     setIsSubmitting(false);
   };
@@ -168,7 +175,9 @@ export default function UserManagementPage() {
       if (!res.success) errorCount++;
     }
     if (errorCount > 0) {
-      alert(`Failed to update ${errorCount} user(s). They might have active assignments preventing deactivation.`);
+      showToast(`Failed to update ${errorCount} user(s). They might have active assignments.`, "error");
+    } else {
+      showToast(`Successfully ${newStatus ? 'activated' : 'deactivated'} ${selectedUserIds.size} user(s).`, "success");
     }
     fetchUsers();
     setSelectedUserIds(new Set());
@@ -418,13 +427,6 @@ export default function UserManagementPage() {
                   {formError}
                 </div>
               )}
-              {formSuccess && (
-                <div className="p-3 bg-teal-50 border border-teal-100 rounded-lg text-sm text-teal-700 font-bold animate-in slide-in-from-top-1">
-                  {editingUser 
-                    ? "User successfully updated!" 
-                    : "User successfully created! Default password: 12345678"}
-                </div>
-              )}
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
@@ -636,6 +638,23 @@ export default function UserManagementPage() {
           </div>
         </div>
       )}
+
+      {/* Global Toast Notification */}
+      {toast && (
+        <div className="fixed bottom-6 right-6 z-[100] animate-in slide-in-from-bottom-5 fade-in duration-300">
+          <div className={`flex items-center gap-3 px-5 py-4 rounded-xl shadow-2xl border ${
+            toast.type === 'error' ? 'bg-red-50 border-red-200 text-red-800' : 'bg-white border-slate-200 text-slate-800'
+          }`}>
+            {toast.type === 'error' ? (
+              <AlertCircle className="h-5 w-5 text-red-600" />
+            ) : (
+              <CheckCircle2 className="h-5 w-5 text-teal-600" />
+            )}
+            <p className="text-sm font-bold tracking-tight">{toast.message}</p>
+          </div>
+        </div>
+      )}
+
     </AdminLayout>
   )
 }
