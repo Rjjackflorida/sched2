@@ -806,9 +806,9 @@ export default function ResourceManagementPage() {
 
       {/* Add Program Modal */}
       {isProgramModalOpen && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl border border-slate-200 w-full max-w-md overflow-hidden animate-in fade-in-50 zoom-in-95 duration-200">
-            <div className="flex justify-between items-center px-6 py-4 border-b border-slate-100 bg-slate-50/80 text-slate-900">
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex justify-end z-[100] animate-in fade-in duration-200">
+          <div className="bg-white shadow-2xl border-l border-slate-200 w-full max-w-md h-full flex flex-col overflow-hidden animate-in slide-in-from-right duration-300">
+            <div className="flex justify-between items-center px-6 py-4 border-b border-slate-100 bg-slate-50/80 text-slate-900 shrink-0">
               <div className="flex items-center gap-2">
                 <div className="p-1.5 bg-teal-100 text-teal-700 rounded-md">
                   <Library className="h-4 w-4" />
@@ -817,7 +817,8 @@ export default function ResourceManagementPage() {
               </div>
               <button onClick={() => setIsProgramModalOpen(false)} className="text-slate-400 hover:text-slate-600 transition-colors"><X className="h-5 w-5" /></button>
             </div>
-            <form onSubmit={handleAddProgramSubmit} className="p-6 space-y-5">
+            <form onSubmit={handleAddProgramSubmit} className="flex-1 flex flex-col min-h-0">
+              <div className="p-6 space-y-5 flex-1 overflow-y-auto custom-scrollbar">
               {formError && <div className="p-3 bg-red-50 border border-red-100 text-red-600 rounded-lg text-sm font-medium animate-in slide-in-from-top-1">{formError}</div>}
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-slate-500 uppercase flex items-center gap-2">
@@ -831,7 +832,8 @@ export default function ResourceManagementPage() {
                 </label>
                 <input required value={programFormData.name} onChange={e => setProgramFormData({ ...programFormData, name: e.target.value })} placeholder="e.g. Bachelor of Science in Information Technology" className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all shadow-sm" />
               </div>
-              <div className="pt-4 flex justify-end gap-3 border-t border-slate-100">
+              </div>
+              <div className="p-6 bg-slate-50/50 border-t border-slate-100 flex justify-end gap-3 shrink-0">
                 <Button type="button" variant="ghost" onClick={() => setIsProgramModalOpen(false)} disabled={isSubmitting} className="text-slate-500 hover:bg-slate-50">Cancel</Button>
                 <Button type="submit" className="bg-[#115e59] hover:bg-teal-900 text-white shadow-lg shadow-teal-900/10 px-6 font-semibold" disabled={isSubmitting}>
                   {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Create Program"}
@@ -844,9 +846,9 @@ export default function ResourceManagementPage() {
 
       {/* Add Section Modal */}
       {isSectionModalOpen && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl border border-slate-200 w-full max-w-md overflow-hidden animate-in fade-in-50 zoom-in-95 duration-200">
-            <div className="flex justify-between items-center px-6 py-4 border-b border-slate-100 bg-slate-50/80 text-slate-900">
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex justify-end z-[100] animate-in fade-in duration-200">
+          <div className="bg-white shadow-2xl border-l border-slate-200 w-full max-w-md h-full flex flex-col overflow-hidden animate-in slide-in-from-right duration-300">
+            <div className="flex justify-between items-center px-6 py-4 border-b border-slate-100 bg-slate-50/80 text-slate-900 shrink-0">
               <div className="flex items-center gap-2">
                 <div className="p-1.5 bg-teal-100 text-teal-700 rounded-md">
                   <Users className="h-4 w-4" />
@@ -855,7 +857,8 @@ export default function ResourceManagementPage() {
               </div>
               <button onClick={() => setIsSectionModalOpen(false)} className="text-slate-400 hover:text-slate-600 transition-colors"><X className="h-5 w-5" /></button>
             </div>
-            <form onSubmit={handleAddSectionSubmit} className="p-6 space-y-5">
+            <form onSubmit={handleAddSectionSubmit} className="flex-1 flex flex-col min-h-0">
+              <div className="p-6 space-y-5 flex-1 overflow-y-auto custom-scrollbar">
               {formError && <div className="p-3 bg-red-50 border border-red-100 text-red-600 rounded-lg text-sm font-medium animate-in slide-in-from-top-1">{formError}</div>}
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-slate-500 uppercase flex items-center gap-2">
@@ -869,7 +872,8 @@ export default function ResourceManagementPage() {
                 </label>
                 <input required value={sectionFormData.name} onChange={e => setSectionFormData({ ...sectionFormData, name: e.target.value })} placeholder="e.g. A" className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 uppercase transition-all shadow-sm" />
               </div>
-              <div className="pt-4 flex justify-end gap-3 border-t border-slate-100">
+              </div>
+              <div className="p-6 bg-slate-50/50 border-t border-slate-100 flex justify-end gap-3 shrink-0">
                 <Button type="button" variant="ghost" onClick={() => setIsSectionModalOpen(false)} disabled={isSubmitting} className="text-slate-500 hover:bg-slate-50">Cancel</Button>
                 <Button type="submit" className="bg-[#115e59] hover:bg-teal-900 text-white shadow-lg shadow-teal-900/10 px-6 font-semibold" disabled={isSubmitting}>
                   {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Create Section"}
@@ -882,9 +886,9 @@ export default function ResourceManagementPage() {
 
       {/* Add Room Modal */}
       {isRoomModalOpen && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl border border-slate-200 w-full max-w-md overflow-hidden animate-in fade-in-50 zoom-in-95 duration-200">
-            <div className="flex justify-between items-center px-6 py-4 border-b border-slate-100 bg-slate-50/80 text-slate-900">
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex justify-end z-[100] animate-in fade-in duration-200">
+          <div className="bg-white shadow-2xl border-l border-slate-200 w-full max-w-md h-full flex flex-col overflow-hidden animate-in slide-in-from-right duration-300">
+            <div className="flex justify-between items-center px-6 py-4 border-b border-slate-100 bg-slate-50/80 text-slate-900 shrink-0">
               <div className="flex items-center gap-2">
                 <div className="p-1.5 bg-teal-100 text-teal-700 rounded-md">
                   <MapPin className="h-4 w-4" />
@@ -893,7 +897,8 @@ export default function ResourceManagementPage() {
               </div>
               <button onClick={() => setIsRoomModalOpen(false)} className="text-slate-400 hover:text-slate-600 transition-colors"><X className="h-5 w-5" /></button>
             </div>
-            <form onSubmit={handleAddRoomSubmit} className="p-6 space-y-5">
+            <form onSubmit={handleAddRoomSubmit} className="flex-1 flex flex-col min-h-0">
+              <div className="p-6 space-y-5 flex-1 overflow-y-auto custom-scrollbar">
               {formError && <div className="p-3 bg-red-50 border border-red-100 text-red-600 rounded-lg text-sm font-medium animate-in slide-in-from-top-1">{formError}</div>}
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-slate-500 uppercase flex items-center gap-2">
@@ -931,7 +936,8 @@ export default function ResourceManagementPage() {
                 </label>
                 <input type="number" required max="99999" value={roomFormData.roomNumber} onChange={(e) => setRoomFormData({ ...roomFormData, roomNumber: e.target.value })} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all shadow-sm" />
               </div>
-              <div className="pt-4 flex justify-end gap-3 border-t border-slate-100">
+              </div>
+              <div className="p-6 bg-slate-50/50 border-t border-slate-100 flex justify-end gap-3 shrink-0">
                 <Button type="button" variant="ghost" onClick={() => setIsRoomModalOpen(false)} disabled={isSubmitting} className="text-slate-500 hover:bg-slate-50">Cancel</Button>
                 <Button type="submit" className="bg-[#115e59] hover:bg-teal-900 text-white shadow-lg shadow-teal-900/10 px-6 font-semibold" disabled={isSubmitting}>
                   {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Create Room"}
@@ -944,9 +950,9 @@ export default function ResourceManagementPage() {
 
       {/* Edit Room Modal */}
       {isEditRoomModalOpen && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl border border-slate-200 w-full max-w-md overflow-hidden animate-in fade-in-50 zoom-in-95 duration-200">
-            <div className="flex justify-between items-center px-6 py-4 border-b border-slate-100 bg-slate-50/80 text-slate-900">
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex justify-end z-[100] animate-in fade-in duration-200">
+          <div className="bg-white shadow-2xl border-l border-slate-200 w-full max-w-md h-full flex flex-col overflow-hidden animate-in slide-in-from-right duration-300">
+            <div className="flex justify-between items-center px-6 py-4 border-b border-slate-100 bg-slate-50/80 text-slate-900 shrink-0">
               <div className="flex items-center gap-2">
                 <div className="p-1.5 bg-teal-100 text-teal-700 rounded-md">
                   <Edit2 className="h-4 w-4" />
@@ -955,7 +961,8 @@ export default function ResourceManagementPage() {
               </div>
               <button onClick={() => setIsEditRoomModalOpen(false)} className="text-slate-400 hover:text-slate-600 transition-colors"><X className="h-5 w-5" /></button>
             </div>
-            <form onSubmit={handleUpdateRoomSubmit} className="p-6 space-y-5">
+            <form onSubmit={handleUpdateRoomSubmit} className="flex-1 flex flex-col min-h-0">
+              <div className="p-6 space-y-5 flex-1 overflow-y-auto custom-scrollbar">
               {formError && (
                 <div className="p-3 bg-red-50 border border-red-100 text-red-600 rounded-lg text-sm font-medium animate-in slide-in-from-top-1">
                   {formError}
@@ -1011,7 +1018,8 @@ export default function ResourceManagementPage() {
                   className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all shadow-sm"
                 />
               </div>
-              <div className="pt-6 border-t border-slate-100 flex justify-end gap-3">
+              </div>
+              <div className="p-6 bg-slate-50/50 border-t border-slate-100 flex justify-end gap-3 shrink-0">
                 <Button
                   type="button"
                   variant="ghost"
@@ -1036,9 +1044,9 @@ export default function ResourceManagementPage() {
 
       {/* Add Course Modal */}
       {isCourseModalOpen && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl border border-slate-200 w-full max-w-md overflow-hidden animate-in fade-in-50 zoom-in-95 duration-200">
-            <div className="flex justify-between items-center px-6 py-4 border-b border-slate-100 bg-slate-50/80 text-slate-900">
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex justify-end z-[100] animate-in fade-in duration-200">
+          <div className="bg-white shadow-2xl border-l border-slate-200 w-full max-w-md h-full flex flex-col overflow-hidden animate-in slide-in-from-right duration-300">
+            <div className="flex justify-between items-center px-6 py-4 border-b border-slate-100 bg-slate-50/80 text-slate-900 shrink-0">
               <div className="flex items-center gap-2">
                 <div className="p-1.5 bg-teal-100 text-teal-700 rounded-md">
                   <BookOpen className="h-4 w-4" />
@@ -1047,7 +1055,8 @@ export default function ResourceManagementPage() {
               </div>
               <button onClick={() => setIsCourseModalOpen(false)} className="text-slate-400 hover:text-slate-600 transition-colors"><X className="h-5 w-5" /></button>
             </div>
-            <form onSubmit={handleAddCourseSubmit} className="p-6 space-y-5">
+            <form onSubmit={handleAddCourseSubmit} className="flex-1 flex flex-col min-h-0">
+              <div className="p-6 space-y-5 flex-1 overflow-y-auto custom-scrollbar">
               {formError && <div className="p-3 bg-red-50 border border-red-100 text-red-600 rounded-lg text-sm font-medium animate-in slide-in-from-top-1">{formError}</div>}
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-slate-500 uppercase flex items-center gap-2">
@@ -1078,7 +1087,8 @@ export default function ResourceManagementPage() {
                 <input type="checkbox" id="add-has-lab" checked={courseFormData.hasLab} onChange={(e) => setCourseFormData({ ...courseFormData, hasLab: e.target.checked })} className="h-4 w-4 rounded border-slate-300 text-teal-600 focus:ring-teal-600" />
                 <label htmlFor="add-has-lab" className="text-sm font-semibold text-slate-700 cursor-pointer">Course has a Lab component</label>
               </div>
-              <div className="pt-4 flex justify-end gap-3 border-t border-slate-100">
+              </div>
+              <div className="p-6 bg-slate-50/50 border-t border-slate-100 flex justify-end gap-3 shrink-0">
                 <Button type="button" variant="ghost" onClick={() => setIsCourseModalOpen(false)} disabled={isSubmitting} className="text-slate-500 hover:bg-slate-50">Cancel</Button>
                 <Button type="submit" className="bg-[#115e59] hover:bg-teal-900 text-white shadow-lg shadow-teal-900/10 px-6 font-semibold" disabled={isSubmitting}>
                   {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Create Course"}
@@ -1091,9 +1101,9 @@ export default function ResourceManagementPage() {
 
       {/* Edit Course Modal */}
       {isEditCourseModalOpen && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl border border-slate-200 w-full max-w-md overflow-hidden animate-in fade-in-50 zoom-in-95 duration-200">
-            <div className="flex justify-between items-center px-6 py-4 border-b border-slate-100 bg-slate-50/80 text-slate-900">
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex justify-end z-[100] animate-in fade-in duration-200">
+          <div className="bg-white shadow-2xl border-l border-slate-200 w-full max-w-md h-full flex flex-col overflow-hidden animate-in slide-in-from-right duration-300">
+            <div className="flex justify-between items-center px-6 py-4 border-b border-slate-100 bg-slate-50/80 text-slate-900 shrink-0">
               <div className="flex items-center gap-2">
                 <div className="p-1.5 bg-teal-100 text-teal-700 rounded-md">
                   <Edit2 className="h-4 w-4" />
@@ -1102,7 +1112,8 @@ export default function ResourceManagementPage() {
               </div>
               <button onClick={() => setIsEditCourseModalOpen(false)} className="text-slate-400 hover:text-slate-600 transition-colors"><X className="h-5 w-5" /></button>
             </div>
-            <form onSubmit={handleUpdateCourseSubmit} className="p-6 space-y-5">
+            <form onSubmit={handleUpdateCourseSubmit} className="flex-1 flex flex-col min-h-0">
+              <div className="p-6 space-y-5 flex-1 overflow-y-auto custom-scrollbar">
               {formError && <div className="p-3 bg-red-50 border border-red-100 text-red-600 rounded-lg text-sm font-medium animate-in slide-in-from-top-1">{formError}</div>}
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-slate-500 uppercase flex items-center gap-2">
@@ -1127,7 +1138,8 @@ export default function ResourceManagementPage() {
                 <input type="checkbox" id="edit-has-lab" checked={editCourseFormData.hasLab} onChange={(e) => setEditCourseFormData({ ...editCourseFormData, hasLab: e.target.checked })} className="h-4 w-4 rounded border-slate-300 text-teal-600 focus:ring-teal-600" />
                 <label htmlFor="edit-has-lab" className="text-sm font-semibold text-slate-700 cursor-pointer">Course has a Lab component</label>
               </div>
-              <div className="pt-6 border-t border-slate-100 flex justify-end gap-3">
+              </div>
+              <div className="p-6 bg-slate-50/50 border-t border-slate-100 flex justify-end gap-3 shrink-0">
                 <Button type="button" variant="ghost" onClick={() => setIsEditCourseModalOpen(false)} disabled={isSubmitting} className="text-slate-500 hover:bg-slate-50">Cancel</Button>
                 <Button type="submit" className="bg-[#115e59] hover:bg-teal-900 text-white shadow-lg shadow-teal-900/10 px-6 font-semibold" disabled={isSubmitting}>Save Changes</Button>
               </div>
@@ -1138,9 +1150,9 @@ export default function ResourceManagementPage() {
 
       {/* Edit Faculty Profile Modal */}
       {isEditFacultyModalOpen && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl border border-slate-200 w-full max-w-md overflow-hidden animate-in fade-in-50 zoom-in-95 duration-200">
-            <div className="flex justify-between items-center px-6 py-4 border-b border-slate-100 bg-slate-50/80 text-slate-900">
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex justify-end z-[100] animate-in fade-in duration-200">
+          <div className="bg-white shadow-2xl border-l border-slate-200 w-full max-w-md h-full flex flex-col overflow-hidden animate-in slide-in-from-right duration-300">
+            <div className="flex justify-between items-center px-6 py-4 border-b border-slate-100 bg-slate-50/80 text-slate-900 shrink-0">
               <div className="flex items-center gap-2">
                 <div className="p-1.5 bg-teal-100 text-teal-700 rounded-md">
                   <Edit2 className="h-4 w-4" />
@@ -1149,7 +1161,8 @@ export default function ResourceManagementPage() {
               </div>
               <button onClick={() => setIsEditFacultyModalOpen(false)} className="text-slate-400 hover:text-slate-600 transition-colors"><X className="h-5 w-5" /></button>
             </div>
-            <form onSubmit={handleFacultyFormSubmit} className="p-6 space-y-5">
+            <form onSubmit={handleFacultyFormSubmit} className="flex-1 flex flex-col min-h-0">
+              <div className="p-6 space-y-5 flex-1 overflow-y-auto custom-scrollbar">
               {formError && <div className="p-3 bg-red-50 border border-red-100 text-red-600 rounded-lg text-sm font-medium animate-in slide-in-from-top-1">{formError}</div>}
               <div className="flex flex-col items-center justify-center py-2 bg-slate-50 rounded-xl border border-slate-100 mb-2">
                 <Avatar className="h-12 w-12 mb-2 border-2 border-white shadow-sm">
@@ -1171,7 +1184,8 @@ export default function ResourceManagementPage() {
                 </select>
               </div>
 
-              <div className="pt-4 flex justify-end gap-3 border-t border-slate-100">
+              </div>
+              <div className="p-6 bg-slate-50/50 border-t border-slate-100 flex justify-end gap-3 shrink-0">
                 <Button type="button" variant="ghost" onClick={() => setIsEditFacultyModalOpen(false)} disabled={isSubmitting} className="text-slate-500 hover:bg-slate-50">Cancel</Button>
                 <Button type="submit" className="bg-[#115e59] hover:bg-teal-900 text-white shadow-lg shadow-teal-900/10 px-6 font-semibold" disabled={isSubmitting}>Save Changes</Button>
               </div>
@@ -1182,9 +1196,9 @@ export default function ResourceManagementPage() {
 
       {/* Add Assignment Modal */}
       {isAssignmentModalOpen && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl border border-slate-200 w-full max-w-md overflow-hidden animate-in fade-in-50 zoom-in-95 duration-200">
-            <div className="flex justify-between items-center px-6 py-4 border-b border-slate-100 bg-slate-50/80 text-slate-900">
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex justify-end z-[100] animate-in fade-in duration-200">
+          <div className="bg-white shadow-2xl border-l border-slate-200 w-full max-w-md h-full flex flex-col overflow-hidden animate-in slide-in-from-right duration-300">
+            <div className="flex justify-between items-center px-6 py-4 border-b border-slate-100 bg-slate-50/80 text-slate-900 shrink-0">
               <div className="flex items-center gap-2">
                 <div className="p-1.5 bg-teal-100 text-teal-700 rounded-md">
                   <Plus className="h-4 w-4" />
@@ -1193,7 +1207,8 @@ export default function ResourceManagementPage() {
               </div>
               <button onClick={() => setIsAssignmentModalOpen(false)} className="text-slate-400 hover:text-slate-600 transition-colors"><X className="h-5 w-5" /></button>
             </div>
-            <form onSubmit={(e) => handleAddAssignmentSubmit(e, false)} className="p-6 space-y-5">
+            <form onSubmit={(e) => handleAddAssignmentSubmit(e, false)} className="flex-1 flex flex-col min-h-0">
+              <div className="p-6 space-y-5 flex-1 overflow-y-auto custom-scrollbar">
               {formError && <div className="p-3 bg-red-50 border border-red-100 text-red-600 rounded-lg text-sm font-medium animate-in slide-in-from-top-1">{formError}</div>}
               {assignmentWarning && (
                 <div className="p-4 bg-orange-50 border border-orange-200 text-orange-800 rounded-lg text-sm font-medium animate-in slide-in-from-top-1">
@@ -1263,7 +1278,8 @@ export default function ResourceManagementPage() {
                 <input type="number" value={assignmentFormData.maxStudents} onChange={(e) => setAssignmentFormData({ ...assignmentFormData, maxStudents: e.target.value })} placeholder="Optional" className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all shadow-sm" />
               </div>
 
-              <div className="pt-4 flex justify-end gap-3 border-t border-slate-100">
+              </div>
+              <div className="p-6 bg-slate-50/50 border-t border-slate-100 flex justify-end gap-3 shrink-0">
                 <Button type="button" variant="ghost" onClick={() => setIsAssignmentModalOpen(false)} disabled={isSubmitting} className="text-slate-500 hover:bg-slate-50">Cancel</Button>
                 <Button type="submit" className="bg-[#115e59] hover:bg-teal-900 text-white shadow-lg shadow-teal-900/10 px-6 font-semibold" disabled={isSubmitting}>
                   {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Create Assignment"}
@@ -1276,9 +1292,9 @@ export default function ResourceManagementPage() {
 
       {/* Edit Assignment Modal */}
       {isEditAssignmentModalOpen && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl border border-slate-200 w-full max-w-md overflow-hidden animate-in fade-in-50 zoom-in-95 duration-200">
-            <div className="flex justify-between items-center px-6 py-4 border-b border-slate-100 bg-slate-50/80 text-slate-900">
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex justify-end z-[100] animate-in fade-in duration-200">
+          <div className="bg-white shadow-2xl border-l border-slate-200 w-full max-w-md h-full flex flex-col overflow-hidden animate-in slide-in-from-right duration-300">
+            <div className="flex justify-between items-center px-6 py-4 border-b border-slate-100 bg-slate-50/80 text-slate-900 shrink-0">
               <div className="flex items-center gap-2">
                 <div className="p-1.5 bg-teal-100 text-teal-700 rounded-md">
                   <Edit2 className="h-4 w-4" />
@@ -1287,7 +1303,8 @@ export default function ResourceManagementPage() {
               </div>
               <button onClick={() => setIsEditAssignmentModalOpen(false)} className="text-slate-400 hover:text-slate-600 transition-colors"><X className="h-5 w-5" /></button>
             </div>
-            <form onSubmit={(e) => handleUpdateAssignmentSubmit(e, false)} className="p-6 space-y-5">
+            <form onSubmit={(e) => handleUpdateAssignmentSubmit(e, false)} className="flex-1 flex flex-col min-h-0">
+              <div className="p-6 space-y-5 flex-1 overflow-y-auto custom-scrollbar">
               {formError && <div className="p-3 bg-red-50 border border-red-100 text-red-600 rounded-lg text-sm font-medium animate-in slide-in-from-top-1">{formError}</div>}
               {assignmentWarning && (
                 <div className="p-4 bg-orange-50 border border-orange-200 text-orange-800 rounded-lg text-sm font-medium animate-in slide-in-from-top-1">
@@ -1356,7 +1373,8 @@ export default function ResourceManagementPage() {
                 <input type="number" value={editAssignmentFormData.maxStudents} onChange={(e) => setEditAssignmentFormData({ ...editAssignmentFormData, maxStudents: e.target.value })} placeholder="Optional" className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all shadow-sm" />
               </div>
 
-              <div className="pt-6 border-t border-slate-100 flex justify-end gap-3">
+              </div>
+              <div className="p-6 bg-slate-50/50 border-t border-slate-100 flex justify-end gap-3 shrink-0">
                 <Button type="button" variant="ghost" onClick={() => setIsEditAssignmentModalOpen(false)} disabled={isSubmitting} className="text-slate-500 hover:bg-slate-50">Cancel</Button>
                 <Button type="submit" className="bg-[#115e59] hover:bg-teal-900 text-white shadow-lg shadow-teal-900/10 px-6 font-semibold" disabled={isSubmitting}>Save Changes</Button>
               </div>
