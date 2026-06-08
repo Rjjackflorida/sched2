@@ -9,7 +9,8 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { 
   X, Loader2, Calendar as CalendarIcon, 
   Clock, MapPin, Users, AlertCircle, CheckCircle2,
-  Trash2, GripVertical, BookOpen, Settings, Info, Save
+  Trash2, GripVertical, BookOpen, Settings, Info, Save,
+  PanelLeftClose, PanelLeftOpen
 } from "lucide-react"
 import { getFacultyRoster } from "@/app/actions/faculty"
 import { getCourseSections, getSectionSchedules, createSectionSchedule, deleteSectionSchedule, getAvailableRooms } from "@/app/actions/section"
@@ -57,6 +58,7 @@ export default function ScheduleBuilderPage() {
   
   // --- UI STATES ---
   const [isInitialLoading, setIsInitialLoading] = useState(true)
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true)
   const [draggedItem, setDraggedItem] = useState(null) // { type: 'new' | 'existing', data: Object }
   const [isRoomModalOpen, setIsRoomModalOpen] = useState(false)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
@@ -304,7 +306,7 @@ export default function ScheduleBuilderPage() {
       <div className="flex-1 flex overflow-hidden">
         
         {/* Sidebar */}
-        <div className="w-[320px] border-r border-slate-200 bg-white flex flex-col overflow-hidden shrink-0">
+        <div className={`${isSidebarOpen ? 'w-[320px]' : 'w-0 opacity-0 border-0'} border-r border-slate-200 bg-white flex flex-col overflow-hidden shrink-0 transition-all duration-300 ease-in-out`}>
           <div className="p-4 border-b border-slate-200 bg-slate-50/50">
             <h2 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">1. Select Instructor</h2>
             <select className="w-full border-slate-200 rounded-md shadow-sm text-sm p-2.5 bg-white focus:ring-2 focus:ring-teal-500 font-bold" value={selectedFaculty?.id || ""} onChange={(e) => setSelectedFaculty(facultyList.find(f => f.id === e.target.value))}>
@@ -344,12 +346,23 @@ export default function ScheduleBuilderPage() {
         </div>
 
         {/* Workspace Grid */}
-        <div className="flex-1 bg-slate-50 overflow-auto p-6 custom-scrollbar">
+        <div className="flex-1 bg-slate-50 overflow-auto p-4 lg:p-6 custom-scrollbar relative flex flex-col">
+          
+          {/* Header Controls */}
+          <div className="mb-4 flex items-center justify-between">
+            <button 
+              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+              className="flex items-center gap-2 bg-white border border-slate-200 px-4 py-2 rounded-xl shadow-sm hover:bg-slate-50 text-slate-600 transition-all text-sm font-bold"
+            >
+              {isSidebarOpen ? <><PanelLeftClose className="h-4 w-4" /> Hide Assignments</> : <><PanelLeftOpen className="h-4 w-4" /> Show Assignments</>}
+            </button>
+          </div>
+
           {!selectedFaculty ? (
-            <div className="h-full flex flex-col items-center justify-center bg-white rounded-[2rem] border-2 border-dashed border-slate-200"><CalendarIcon className="h-24 w-24 text-slate-50 mb-4" /><p className="text-slate-300 font-black uppercase tracking-widest text-lg">Load Faculty Workspace</p></div>
+            <div className="flex-1 flex flex-col items-center justify-center bg-white rounded-[2rem] border-2 border-dashed border-slate-200"><CalendarIcon className="h-24 w-24 text-slate-50 mb-4" /><p className="text-slate-300 font-black uppercase tracking-widest text-lg">Load Faculty Workspace</p></div>
           ) : (
-            <div className="space-y-6">
-              <div className="flex justify-between items-end bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100">
+            <div className="space-y-6 flex-1 flex flex-col">
+              <div className="flex justify-between items-end bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100 shrink-0">
                 <div className="flex items-center gap-4"><Avatar className="h-14 w-14 ring-4 ring-teal-500/10 shadow-lg"><AvatarFallback className="bg-[#115e59] text-white font-black text-xl">{selectedFaculty.fullName.split(' ').map(n => n[0]).join('')}</AvatarFallback></Avatar><div><p className="text-[10px] font-black text-teal-600 uppercase tracking-[0.2em] mb-1">Active Instructor</p><h2 className="text-2xl font-black text-slate-900 leading-none">{selectedFaculty.fullName}</h2></div></div>
                 <div className="flex flex-col items-end gap-2">
                     <div className="flex gap-4"><div className="flex items-center gap-2"><div className="w-3 h-3 bg-white border-2 border-slate-200 rounded-full shadow-sm"></div> <span className="text-[10px] font-black text-slate-400 uppercase">Available</span></div><div className="flex items-center gap-2"><div className="w-3 h-3 bg-slate-200 diagonal-stripes rounded-full shadow-sm"></div> <span className="text-[10px] font-black text-slate-400 uppercase">Unavailable</span></div></div>
@@ -357,15 +370,15 @@ export default function ScheduleBuilderPage() {
                 </div>
               </div>
 
-              <div className="bg-white rounded-[2.5rem] shadow-2xl shadow-slate-200/50 border border-slate-200 overflow-hidden min-w-[1200px]">
-                <div className="grid grid-cols-[100px_repeat(6,1fr)] bg-slate-50/80 backdrop-blur-sm border-b border-slate-200">
-                   <div className="p-4 text-center font-black text-slate-400 text-[10px] uppercase tracking-widest border-r border-slate-200">Timeline</div>
-                   {DAYS.map(day => (<div key={day} className="p-4 text-center font-black text-slate-900 text-sm uppercase tracking-tighter border-r border-slate-200 last:border-0">{day}</div>))}
+              <div className="bg-white rounded-[2.5rem] shadow-2xl shadow-slate-200/50 border border-slate-200 overflow-hidden flex-1 flex flex-col min-h-0 min-w-[800px]">
+                <div className="grid grid-cols-[80px_repeat(6,1fr)] bg-slate-50/80 backdrop-blur-sm border-b border-slate-200 shrink-0">
+                   <div className="p-3 text-center font-black text-slate-400 text-[10px] uppercase tracking-widest border-r border-slate-200">Timeline</div>
+                   {DAYS.map(day => (<div key={day} className="p-3 text-center font-black text-slate-900 text-xs md:text-sm uppercase tracking-tighter border-r border-slate-200 last:border-0">{day}</div>))}
                 </div>
 
-                <div className="divide-y divide-slate-100 max-h-[800px] overflow-y-auto relative custom-scrollbar">
+                <div className="divide-y divide-slate-100 overflow-y-auto relative custom-scrollbar flex-1">
                    {TIME_SLOTS.map(time => (
-                     <div key={time} className="grid grid-cols-[100px_repeat(6,1fr)] h-14 group">
+                     <div key={time} className="grid grid-cols-[80px_repeat(6,1fr)] h-12 group">
                         <div className="p-2 border-r border-slate-200 flex items-center justify-center text-[10px] font-black text-slate-400 bg-slate-50/50 group-hover:bg-slate-100 transition-colors uppercase">{format12H(time)}</div>
                         {DAYS.map(day => {
                           const isUnavailable = facultyAvailability.has(`${day}-${time}`)
