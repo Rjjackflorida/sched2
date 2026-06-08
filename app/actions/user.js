@@ -313,11 +313,34 @@ export async function getUserProfile(userId) {
 /**
  * Updates a user's active/inactive status.
  */
-export async function toggleUserStatus(userId, currentStatus) {
+export async function toggleUserStatus(userId, newStatus) {
   try {
+    // If attempting to deactivate, check for assigned courses
+    if (!newStatus) {
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+        include: {
+          facultyProfile: {
+            include: {
+              _count: {
+                select: { sections: true }
+              }
+            }
+          }
+        }
+      });
+
+      if (user && user.role === 'faculty' && user.facultyProfile && user.facultyProfile._count.sections > 0) {
+        return {
+          success: false,
+          error: `Cannot deactivate. This faculty member has ${user.facultyProfile._count.sections} assigned course(s). Please reassign them first.`
+        };
+      }
+    }
+
     const updatedUser = await prisma.user.update({
       where: { id: userId },
-      data: { isActive: !currentStatus },
+      data: { isActive: newStatus },
     });
 
     return {

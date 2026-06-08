@@ -34,6 +34,7 @@ export default function UserManagementPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
   const [toggleTarget, setToggleTarget] = useState(null);
+  const [toggleError, setToggleError] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
 
   // Form States
@@ -131,10 +132,13 @@ export default function UserManagementPage() {
   const confirmToggleStatus = async () => {
     if (!toggleTarget) return;
     setIsSubmitting(true);
+    setToggleError(null);
     const res = await toggleUserStatus(toggleTarget.id, !toggleTarget.isActive);
     if (res.success) {
       fetchUsers();
       setToggleTarget(null);
+    } else {
+      setToggleError(res.error);
     }
     setIsSubmitting(false);
   };
@@ -249,7 +253,10 @@ export default function UserManagementPage() {
                             <Edit className="h-4 w-4" />
                           </button>
                           <button 
-                            onClick={() => setToggleTarget(user)}
+                            onClick={() => {
+                              setToggleError(null);
+                              setToggleTarget(user);
+                            }}
                             className={`p-2 rounded-lg transition-all ${user.isActive ? 'text-slate-400 hover:text-orange-600 hover:bg-orange-50' : 'text-slate-400 hover:text-teal-600 hover:bg-teal-50'}`}
                             title={user.isActive ? "Deactivate User" : "Activate User"}
                           >
@@ -446,27 +453,47 @@ export default function UserManagementPage() {
               <h3 className="text-xl font-bold text-slate-900 mb-2">
                 {toggleTarget.isActive ? "Deactivate User?" : "Activate User?"}
               </h3>
-              <p className="text-sm text-slate-500 mb-8 leading-relaxed font-medium">
+              <p className="text-sm text-slate-500 mb-6 leading-relaxed font-medium">
                 Are you sure you want to set <span className="font-bold text-slate-800">{toggleTarget.fullName}</span> to 
                 <span className={`font-semibold ${toggleTarget.isActive ? 'text-orange-600' : 'text-teal-600'}`}> {toggleTarget.isActive ? "Inactive" : "Active"}</span>?
               </p>
               
+              {toggleError && (
+                <div className="mb-6 p-3 bg-red-50 border border-red-100 rounded-lg text-sm text-red-600 animate-in slide-in-from-top-1 font-medium text-left flex items-start gap-2">
+                  <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
+                  <span>{toggleError}</span>
+                </div>
+              )}
+              
               <div className="flex gap-3 justify-center">
-                <Button
-                  variant="ghost"
-                  onClick={() => setToggleTarget(null)}
-                  className="px-6 text-slate-500 hover:bg-slate-50"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  onClick={confirmToggleStatus}
-                  className={`px-8 shadow-lg font-semibold ${toggleTarget.isActive 
-                    ? "bg-orange-600 hover:bg-orange-700 text-white shadow-orange-600/10" 
-                    : "bg-[#115e59] hover:bg-teal-900 text-white shadow-teal-900/10"}`}
-                >
-                  Confirm
-                </Button>
+                {toggleError ? (
+                  <Button
+                    onClick={() => setToggleTarget(null)}
+                    className="w-full bg-slate-900 hover:bg-slate-800 text-white shadow-lg shadow-slate-900/10 font-semibold"
+                  >
+                    Okay, got it
+                  </Button>
+                ) : (
+                  <>
+                    <Button
+                      variant="ghost"
+                      onClick={() => setToggleTarget(null)}
+                      className="px-6 text-slate-500 hover:bg-slate-50"
+                      disabled={isSubmitting}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      onClick={confirmToggleStatus}
+                      className={`px-8 shadow-lg font-semibold ${toggleTarget.isActive 
+                        ? "bg-orange-600 hover:bg-orange-700 text-white shadow-orange-600/10" 
+                        : "bg-[#115e59] hover:bg-teal-900 text-white shadow-teal-900/10"}`}
+                      disabled={isSubmitting}
+                    >
+                      {isSubmitting ? <Loader2 className="h-5 w-5 animate-spin" /> : "Confirm"}
+                    </Button>
+                  </>
+                )}
               </div>
             </div>
           </div>
