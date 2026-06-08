@@ -28,6 +28,9 @@ export default function UserManagementPage() {
   const [users, setUsers] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const [roleFilter, setRoleFilter] = useState("All");
+  const [statusFilter, setStatusFilter] = useState("All");
+  const [selectedUserIds, setSelectedUserIds] = useState(new Set());
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Modal States
@@ -156,10 +159,29 @@ export default function UserManagementPage() {
     setIsSubmitting(false);
   };
 
-  const filteredUsers = users.filter(user => 
-    `${user.firstName} ${user.lastName}`.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    user.email.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const handleBulkToggle = async (newStatus) => {
+    if (selectedUserIds.size === 0) return;
+    setIsSubmitting(true);
+    let errorCount = 0;
+    for (let id of selectedUserIds) {
+      const res = await toggleUserStatus(id, newStatus);
+      if (!res.success) errorCount++;
+    }
+    if (errorCount > 0) {
+      alert(`Failed to update ${errorCount} user(s). They might have active assignments preventing deactivation.`);
+    }
+    fetchUsers();
+    setSelectedUserIds(new Set());
+    setIsSubmitting(false);
+  };
+
+  const filteredUsers = users.filter(user => {
+    const matchesSearch = `${user.firstName} ${user.lastName}`.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          user.email.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesRole = roleFilter === "All" || user.role === roleFilter;
+    const matchesStatus = statusFilter === "All" || (statusFilter === "Active" ? user.isActive : !user.isActive);
+    return matchesSearch && matchesRole && matchesStatus;
+  });
 
   return (
     <AdminLayout title="User Management">
@@ -181,20 +203,52 @@ export default function UserManagementPage() {
 
         {/* Toolbar Section */}
         <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
-          <div className="relative w-full sm:w-96">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-            <input 
-              type="text" 
-              placeholder="Search by name or email..." 
-              className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-4 focus:ring-teal-500/10 focus:border-teal-500 transition-all shadow-sm"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
+          <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
+            <div className="relative w-full sm:w-80">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <input 
+                type="text" 
+                placeholder="Search by name or email..." 
+                className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-4 focus:ring-teal-500/10 focus:border-teal-500 transition-all shadow-sm"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+            <select 
+              value={roleFilter} 
+              onChange={e => setRoleFilter(e.target.value)}
+              className="bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 shadow-sm min-w-[140px] w-full sm:w-auto font-medium text-slate-600"
+            >
+              <option value="All">All Roles</option>
+              <option value="admin">Admin</option>
+              <option value="faculty">Faculty</option>
+            </select>
+            <select 
+              value={statusFilter} 
+              onChange={e => setStatusFilter(e.target.value)}
+              className="bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 shadow-sm min-w-[140px] w-full sm:w-auto font-medium text-slate-600"
+            >
+              <option value="All">All Statuses</option>
+              <option value="Active">Active</option>
+              <option value="Inactive">Inactive</option>
+            </select>
           </div>
-          <div className="text-xs font-semibold text-slate-400 uppercase tracking-widest">
+          <div className="text-xs font-semibold text-slate-400 uppercase tracking-widest text-right shrink-0">
             Showing {filteredUsers.length} Users
           </div>
         </div>
+
+        {selectedUserIds.size > 0 && (
+          <div className="bg-teal-50 border border-teal-200 rounded-xl p-4 flex justify-between items-center animate-in fade-in slide-in-from-top-2 shadow-sm">
+            <div className="text-teal-800 font-bold text-sm">
+              {selectedUserIds.size} user(s) selected
+            </div>
+            <div className="flex gap-2">
+              <Button disabled={isSubmitting} onClick={() => handleBulkToggle(true)} size="sm" variant="outline" className="border-teal-200 text-teal-700 hover:bg-teal-100 font-bold bg-white"><ToggleRight className="h-4 w-4 mr-2" /> Activate Selected</Button>
+              <Button disabled={isSubmitting} onClick={() => handleBulkToggle(false)} size="sm" variant="outline" className="border-orange-200 text-orange-700 hover:bg-orange-50 font-bold bg-white"><ToggleLeft className="h-4 w-4 mr-2" /> Deactivate Selected</Button>
+            </div>
+          </div>
+        )}
 
         {/* Users Table Card */}
         <Card className="border-slate-200 shadow-xl overflow-hidden bg-white/50 backdrop-blur-sm">
@@ -208,6 +262,17 @@ export default function UserManagementPage() {
               <table className="w-full text-left border-collapse">
                 <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase text-[10px] font-semibold tracking-widest">
                   <tr>
+                    <th className="px-6 py-4 w-12 text-center">
+                      <input 
+                        type="checkbox" 
+                        className="rounded border-slate-300 text-teal-600 focus:ring-teal-500/20 cursor-pointer h-4 w-4"
+                        checked={filteredUsers.length > 0 && selectedUserIds.size === filteredUsers.length}
+                        onChange={(e) => {
+                          if (e.target.checked) setSelectedUserIds(new Set(filteredUsers.map(u => u.id)));
+                          else setSelectedUserIds(new Set());
+                        }}
+                      />
+                    </th>
                     <th className="px-6 py-4">System User</th>
                     <th className="px-6 py-4">Role</th>
                     <th className="px-6 py-4">Email Address</th>
@@ -218,6 +283,19 @@ export default function UserManagementPage() {
                 <tbody className="divide-y divide-slate-100">
                   {filteredUsers.map((user) => (
                     <tr key={user.id} className="hover:bg-slate-50 transition-colors bg-white/40">
+                      <td className="px-6 py-4 text-center">
+                        <input 
+                          type="checkbox"
+                          className="rounded border-slate-300 text-teal-600 focus:ring-teal-500/20 cursor-pointer h-4 w-4"
+                          checked={selectedUserIds.has(user.id)}
+                          onChange={(e) => {
+                            const newSet = new Set(selectedUserIds);
+                            if (e.target.checked) newSet.add(user.id);
+                            else newSet.delete(user.id);
+                            setSelectedUserIds(newSet);
+                          }}
+                        />
+                      </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
                           <Avatar className="h-9 w-9 border-2 border-white shadow-sm">
@@ -275,7 +353,7 @@ export default function UserManagementPage() {
                   ))}
                   {filteredUsers.length === 0 && (
                     <tr>
-                      <td colSpan={5} className="px-6 py-12 text-center text-slate-400 italic text-sm">
+                      <td colSpan={6} className="px-6 py-12 text-center text-slate-400 italic text-sm">
                         No users found matching your search.
                       </td>
                     </tr>
