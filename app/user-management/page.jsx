@@ -353,8 +353,31 @@ export default function UserManagementPage() {
                   ))}
                   {filteredUsers.length === 0 && (
                     <tr>
-                      <td colSpan={6} className="px-6 py-12 text-center text-slate-400 italic text-sm">
-                        No users found matching your search.
+                      <td colSpan={6} className="px-6 py-16 text-center">
+                        <div className="flex flex-col items-center justify-center space-y-4">
+                          <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center text-slate-400 mb-2">
+                            <Search className="h-8 w-8" />
+                          </div>
+                          <h4 className="text-lg font-bold text-slate-900">No users found</h4>
+                          <p className="text-sm text-slate-500 max-w-sm mx-auto">
+                            We couldn't find any users matching your current filters or search query.
+                          </p>
+                          <div className="flex gap-3 mt-4">
+                            <Button 
+                              onClick={() => { setSearchQuery(''); setRoleFilter('All'); setStatusFilter('All'); }}
+                              variant="outline"
+                              className="text-slate-600 border-slate-200 hover:bg-slate-50"
+                            >
+                              Clear Filters
+                            </Button>
+                            <Button 
+                              onClick={handleAddClick}
+                              className="bg-[#115e59] hover:bg-teal-900 text-white shadow-lg shadow-teal-900/10"
+                            >
+                              <Plus className="h-4 w-4 mr-2" /> Add New User
+                            </Button>
+                          </div>
+                        </div>
                       </td>
                     </tr>
                   )}
@@ -365,12 +388,12 @@ export default function UserManagementPage() {
         </Card>
       </div>
 
-      {/* Add/Edit User Modal Dialog */}
+      {/* Add/Edit User Drawer */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl border border-slate-200 w-full max-w-md overflow-hidden animate-in fade-in-50 zoom-in-95 duration-200">
-            {/* Modal Header */}
-            <div className="flex justify-between items-center px-6 py-4 border-b border-slate-100 bg-slate-50/80 text-slate-900">
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex justify-end z-50 animate-in fade-in duration-200">
+          <div className="bg-white shadow-2xl border-l border-slate-200 w-full max-w-md h-full flex flex-col overflow-hidden animate-in slide-in-from-right duration-300">
+            {/* Drawer Header */}
+            <div className="flex justify-between items-center px-6 py-4 border-b border-slate-100 bg-slate-50/80 text-slate-900 shrink-0">
               <div className="flex items-center gap-2">
                 <div className="p-1.5 bg-teal-100 text-teal-700 rounded-md">
                   <UserPlus className="h-4 w-4" />
@@ -387,8 +410,9 @@ export default function UserManagementPage() {
               </button>
             </div>
             
-            {/* Modal Form */}
-            <form onSubmit={handleSubmit} className="p-6 space-y-5">
+            {/* Drawer Form */}
+            <form onSubmit={handleSubmit} className="flex-1 flex flex-col min-h-0">
+              <div className="p-6 space-y-5 flex-1 overflow-y-auto custom-scrollbar">
               {formError && (
                 <div className="p-3 bg-red-50 border border-red-100 rounded-lg text-sm text-red-600 animate-in slide-in-from-top-1 font-medium">
                   {formError}
@@ -489,8 +513,9 @@ export default function UserManagementPage() {
                   </div>
                 </div>
               )}
+              </div>
 
-              <div className="pt-6 flex justify-end gap-3 border-t border-slate-100">
+              <div className="p-6 bg-slate-50/50 border-t border-slate-100 flex justify-end gap-3 shrink-0">
                 <Button
                   type="button"
                   variant="ghost"
