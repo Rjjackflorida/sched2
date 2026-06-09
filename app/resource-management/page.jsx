@@ -755,7 +755,7 @@ export default function ResourceManagementPage() {
                             <td className="px-6 py-4 text-right">
                               <div className="flex justify-end gap-1">
                                 <button onClick={() => handleEditAssignmentClick(section)} className="p-2 text-slate-400 hover:text-teal-600 hover:bg-teal-50 rounded-lg transition-all"><Edit2 className="h-4 w-4" /></button>
-                                <button onClick={() => setDeleteTarget({ type: 'assignment', id: section.id, name: `${section.courseCode} for ${section.programCode} ${section.yearLevel}-{section.sectionName}` })} className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"><Trash2 className="h-4 w-4" /></button>
+                                <button onClick={() => setDeleteTarget({ type: 'assignment', id: section.id, name: `${section.courseCode} for ${section.programCode} ${section.yearLevel}-${section.sectionName}` })} className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"><Trash2 className="h-4 w-4" /></button>
                               </div>
                             </td>
                           </tr>
