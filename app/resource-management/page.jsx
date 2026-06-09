@@ -1454,7 +1454,7 @@ export default function ResourceManagementPage() {
             </div>
 
             {/* Content Body */}
-            <div className="flex-1 overflow-auto p-6 custom-scrollbar print:p-0 print:overflow-visible">
+            <div className="flex-1 overflow-auto p-6 custom-scrollbar print:p-8 print:overflow-visible">
               <div className="hidden print:block text-center border-b-2 border-slate-900 pb-6 mb-8">
                 <h1 className="text-2xl font-bold uppercase tracking-tighter">Room Schedule: {viewingRoomSchedule.roomName}</h1>
                 <div className="flex justify-center gap-8 mt-4 text-sm font-bold">
@@ -1575,7 +1575,7 @@ export default function ResourceManagementPage() {
             </div>
 
             {/* Content Body */}
-            <div className="flex-1 overflow-auto p-6 custom-scrollbar print:p-0 print:overflow-visible">
+            <div className="flex-1 overflow-auto p-6 custom-scrollbar print:p-8 print:overflow-visible">
               <div className="hidden print:block text-center border-b-2 border-slate-900 pb-6 mb-8">
                 <h1 className="text-2xl font-bold uppercase tracking-tighter">Faculty Schedule: {viewingFacultySchedule.facultyName}</h1>
                 <div className="flex justify-center gap-8 mt-4 text-sm font-bold">
@@ -1696,7 +1696,7 @@ export default function ResourceManagementPage() {
             </div>
 
             {/* Content Body */}
-            <div className="flex-1 overflow-auto p-6 custom-scrollbar print:p-0 print:overflow-visible">
+            <div className="flex-1 overflow-auto p-6 custom-scrollbar print:p-8 print:overflow-visible">
               <div className="hidden print:block text-center border-b-2 border-slate-900 pb-6 mb-8">
                 <h1 className="text-2xl font-bold uppercase tracking-tighter">Student Schedule: {viewingSectionSchedule.sectionName}</h1>
                 <div className="flex justify-center gap-8 mt-4 text-sm font-bold">
@@ -1785,6 +1785,10 @@ export default function ResourceManagementPage() {
 
       <style jsx>{`
         .diagonal-stripes { background-image: repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(0,0,0,0.04) 10px, rgba(0,0,0,0.04) 20px); }
+        @media print {
+          @page { margin: 0; size: landscape; }
+          body { background: white !important; }
+        }
       `}</style>
     </AdminLayout>
   )

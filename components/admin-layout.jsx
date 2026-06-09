@@ -119,9 +119,9 @@ export function AdminLayout({ children, title }) {
   ]
 
   return (
-    <div className="flex h-screen bg-slate-50 w-full overflow-hidden">
+    <div className="flex h-screen bg-slate-50 w-full overflow-hidden print:h-auto print:overflow-visible">
       {/* Sidebar Navigation */}
-      <aside className="w-[250px] bg-white border-r border-slate-200 flex flex-col hidden md:flex shrink-0">
+      <aside className="w-[250px] bg-white border-r border-slate-200 flex flex-col hidden md:flex shrink-0 print:hidden">
         {/* Sidebar Header: Brand/User Info */}
         <div className="p-4 border-b border-slate-200">
           <div className="flex items-center gap-3">
@@ -163,9 +163,9 @@ export function AdminLayout({ children, title }) {
       </aside>
 
       {/* Main Content Area */}
-      <main className="flex-1 flex flex-col h-full overflow-hidden">
+      <main className="flex-1 flex flex-col h-full overflow-hidden print:h-auto print:overflow-visible">
         {/* Top Navigation Bar */}
-        <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6 shrink-0">
+        <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6 shrink-0 print:hidden">
           <h1 className="text-xl font-bold text-teal-700">{title || "Scheduling Portal"}</h1>
           <div className="flex items-center gap-4">
             <DropdownMenu>

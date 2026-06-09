@@ -108,9 +108,9 @@ export default function FacultyLayout({ children }) {
   const initials = user ? `${user.firstName[0]}${user.lastName[0]}` : "FM"
 
   return (
-    <div className="flex h-screen bg-slate-50 w-full overflow-hidden">
+    <div className="flex h-screen bg-slate-50 w-full overflow-hidden print:h-auto print:overflow-visible">
       {/* Sidebar Navigation */}
-      <aside className="w-[250px] bg-white border-r border-slate-200 flex flex-col hidden md:flex shrink-0">
+      <aside className="w-[250px] bg-white border-r border-slate-200 flex flex-col hidden md:flex shrink-0 print:hidden">
         <div className="p-4 border-b border-slate-200">
           <div className="flex items-center gap-3">
             <div>
@@ -148,9 +148,9 @@ export default function FacultyLayout({ children }) {
       </aside>
 
       {/* Main Content Area */}
-      <main className="flex-1 flex flex-col h-full overflow-hidden">
+      <main className="flex-1 flex flex-col h-full overflow-hidden print:h-auto print:overflow-visible">
         {/* Top Navigation Bar */}
-        <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6 shrink-0">
+        <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6 shrink-0 print:hidden">
           <h1 className="text-xl font-bold text-teal-700">Faculty Portal</h1>
           <div className="flex items-center gap-4">
             <DropdownMenu>
@@ -184,7 +184,7 @@ export default function FacultyLayout({ children }) {
         </header>
 
         {/* Dynamic Page Content */}
-        <div className="flex-1 overflow-auto bg-slate-50">
+        <div className="flex-1 overflow-auto bg-slate-50 print:overflow-visible print:bg-white">
           {children}
         </div>
       </main>

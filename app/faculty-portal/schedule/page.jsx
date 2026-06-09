@@ -121,7 +121,7 @@ export default function FacultySchedule() {
   })
 
   return (
-    <div className="p-6 lg:p-8 max-w-7xl mx-auto space-y-6 print:p-0">
+    <div className="p-6 lg:p-8 max-w-7xl mx-auto space-y-6 print:p-8">
       {/* Header - Hidden on Print */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 print:hidden">
         <div>
@@ -162,7 +162,7 @@ export default function FacultySchedule() {
         </Card>
       ) : (
         <Card className="border-slate-200 shadow-2xl overflow-hidden bg-white/50 backdrop-blur-sm">
-          <CardContent className="p-0 overflow-x-auto">
+          <CardContent className="p-0 overflow-x-auto print:overflow-visible">
             <div className="min-w-[1000px] relative">
               {/* Grid Header (Days) */}
               <div className="grid grid-cols-[100px_repeat(6,1fr)] bg-slate-50 border-b border-slate-200 sticky top-0 z-20">
@@ -279,7 +279,7 @@ export default function FacultySchedule() {
           body { background: white !important; }
           .shadow-2xl { box-shadow: none !important; }
           .border-slate-200 { border-color: #000 !important; }
-          @page { margin: 1cm; }
+          @page { margin: 0; size: landscape; }
         }
         
         .custom-scrollbar::-webkit-scrollbar {
