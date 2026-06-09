@@ -1,6 +1,7 @@
 "use server"
 
 import { prisma } from "@/lib/prisma"
+import { verifyAdmin } from "@/lib/session"
 
 /**
  * Fetches the global system settings.
@@ -36,6 +37,7 @@ export async function updateSystemSettings(data) {
   const { activeSemester, activeAcademicYear } = data;
 
   try {
+    await verifyAdmin();
     const settings = await prisma.systemSetting.upsert({
       where: { id: "global" },
       update: {

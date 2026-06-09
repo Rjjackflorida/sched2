@@ -1,6 +1,7 @@
 "use server"
 
 import { prisma } from "@/lib/prisma"
+import { verifyAdmin } from "@/lib/session"
 
 /**
  * Fetches all rooms from the database.
@@ -35,6 +36,7 @@ export async function createRoom(data) {
   }
 
   try {
+    await verifyAdmin();
     const newRoom = await prisma.room.create({
       data: {
         name,
@@ -63,6 +65,7 @@ export async function updateRoom(id, data) {
   }
 
   try {
+    await verifyAdmin();
     const updatedRoom = await prisma.room.update({
       where: { id },
       data: {
@@ -86,6 +89,7 @@ export async function updateRoom(id, data) {
  */
 export async function deleteRoom(id) {
   try {
+    await verifyAdmin();
     const room = await prisma.room.findUnique({
       where: { id },
       include: { _count: { select: { schedules: true } } }

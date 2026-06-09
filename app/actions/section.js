@@ -2,6 +2,7 @@
 
 import { prisma } from "@/lib/prisma"
 import { getSystemSettings } from "@/app/actions/settings"
+import { verifyAdmin } from "@/lib/session"
 
 /**
  * Fetches all course sections (assignments) from the database.
@@ -70,6 +71,7 @@ export async function createCourseSection(data) {
   }
 
   try {
+    await verifyAdmin();
     // --- WORKLOAD GUARD ---
     if (facultyId) {
       const settingsRes = await getSystemSettings();
@@ -141,6 +143,7 @@ export async function updateCourseSection(id, data) {
   const { courseId, facultyId, sectionId, semester, academicYear, maxStudents, forceAssignment } = data;
 
   try {
+    await verifyAdmin();
     // --- WORKLOAD GUARD ---
     if (facultyId) {
       const settingsRes = await getSystemSettings();
@@ -213,6 +216,7 @@ export async function updateCourseSection(id, data) {
  */
 export async function deleteCourseSection(id) {
   try {
+    await verifyAdmin();
     const section = await prisma.courseSection.findUnique({
       where: { id },
       include: { _count: { select: { schedules: true } } }
@@ -327,6 +331,7 @@ export async function createSectionSchedule(data) {
   const { courseSectionId, roomId, dayOfWeek, startTime, endTime } = data;
 
   try {
+    await verifyAdmin();
     // 1. Fetch the CourseSection to get Faculty, Section, and Term details
     const cs = await prisma.courseSection.findUnique({
       where: { id: courseSectionId },
@@ -450,6 +455,7 @@ export async function createSectionSchedule(data) {
  */
 export async function deleteSectionSchedule(id) {
   try {
+    await verifyAdmin();
     await prisma.sectionSchedule.delete({ where: { id } });
     return { success: true };
   } catch (error) {

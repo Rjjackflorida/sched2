@@ -2,7 +2,7 @@
 
 import { prisma } from "@/lib/prisma"
 import bcrypt from "bcryptjs"
-import { getSession } from "@/lib/session"
+import { getSession, verifyAdmin } from "@/lib/session"
 
 /**
  * Retrieves the currently logged-in user's details based on the session.
@@ -109,6 +109,7 @@ export async function updateProfile(data) {
 
 export async function getUsers() {
   try {
+    await verifyAdmin();
     const users = await prisma.user.findMany({
       orderBy: { createdAt: "desc" },
     });
@@ -142,6 +143,7 @@ export async function createUser(data) {
   }
 
   try {
+    await verifyAdmin();
     // Check if user with email already exists
     const existingUser = await prisma.user.findUnique({
       where: { email },
@@ -222,6 +224,7 @@ export async function createUser(data) {
  */
 export async function deleteUser(userId) {
   try {
+    await verifyAdmin();
     // Note: FacultyProfile and other relations will be handled by 'onDelete: Cascade' in schema
     await prisma.user.delete({
       where: { id: userId },
@@ -247,6 +250,7 @@ export async function updateUser(userId, data) {
   }
 
   try {
+    await verifyAdmin();
     const updateData = {
       firstName,
       lastName,
@@ -315,6 +319,7 @@ export async function getUserProfile(userId) {
  */
 export async function toggleUserStatus(userId, newStatus) {
   try {
+    await verifyAdmin();
     // If attempting to deactivate, check for assigned courses
     if (!newStatus) {
       const user = await prisma.user.findUnique({

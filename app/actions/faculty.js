@@ -2,6 +2,7 @@
 
 import { prisma } from "@/lib/prisma"
 import { getSystemSettings } from "@/app/actions/settings"
+import { verifyAdmin } from "@/lib/session"
 
 /**
  * Fetches all users with the 'faculty' role and their associated profiles.
@@ -91,6 +92,7 @@ export async function updateFacultyProfile(userId, data) {
   const { employmentType, maxUnitsPerSem } = data;
 
   try {
+    await verifyAdmin();
     const updatedProfile = await prisma.facultyProfile.update({
       where: { userId: userId },
       data: {
@@ -113,6 +115,7 @@ export async function updateFacultyProfile(userId, data) {
  */
 export async function deleteFacultyProfile(userId) {
   try {
+    await verifyAdmin();
     const profile = await prisma.facultyProfile.findUnique({
       where: { userId },
       include: { _count: { select: { sections: true } } }

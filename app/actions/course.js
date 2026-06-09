@@ -1,12 +1,14 @@
 "use server"
 
 import { prisma } from "@/lib/prisma"
+import { verifyAdmin } from "@/lib/session"
 
 /**
  * Fetches all courses from the database.
  */
 export async function getCourses() {
   try {
+    await verifyAdmin();
     const courses = await prisma.course.findMany({
       orderBy: { code: "asc" },
     });
@@ -41,6 +43,7 @@ export async function createCourse(data) {
   }
 
   try {
+    await verifyAdmin();
     const finalUnits = parseInt(units, 10) + (hasLab ? 2 : 0);
 
     const newCourse = await prisma.course.create({
@@ -74,6 +77,7 @@ export async function updateCourse(id, data) {
   }
 
   try {
+    await verifyAdmin();
     const finalUnits = parseInt(units, 10) + (hasLab ? 2 : 0);
 
     const updatedCourse = await prisma.course.update({
@@ -100,6 +104,7 @@ export async function updateCourse(id, data) {
  */
 export async function deleteCourse(id) {
   try {
+    await verifyAdmin();
     // Check if course has sections
     const course = await prisma.course.findUnique({
       where: { id },

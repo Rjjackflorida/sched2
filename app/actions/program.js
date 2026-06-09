@@ -1,12 +1,14 @@
 "use server"
 
 import { prisma } from "@/lib/prisma"
+import { verifyAdmin } from "@/lib/session"
 
 /**
  * Fetches all programs with their nested sections.
  */
 export async function getPrograms() {
   try {
+    await verifyAdmin();
     const programs = await prisma.program.findMany({
       include: {
         sections: {
@@ -37,6 +39,7 @@ export async function createProgram(data) {
   }
 
   try {
+    await verifyAdmin();
     const newProgram = await prisma.program.create({
       data: {
         code: code.toUpperCase(),
@@ -65,6 +68,7 @@ export async function createSection(data) {
   }
 
   try {
+    await verifyAdmin();
     const newSection = await prisma.section.create({
       data: {
         programId,
@@ -89,6 +93,7 @@ export async function createSection(data) {
  */
 export async function deleteProgram(id) {
   try {
+    await verifyAdmin();
     // Check if any sections under this program are used in course sections
     const program = await prisma.program.findUnique({
       where: { id },
@@ -121,6 +126,7 @@ export async function deleteProgram(id) {
  */
 export async function deleteSection(id) {
   try {
+    await verifyAdmin();
     const section = await prisma.section.findUnique({
       where: { id },
       include: { _count: { select: { courseSections: true } } }
