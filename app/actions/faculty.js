@@ -93,12 +93,17 @@ export async function updateFacultyProfile(userId, data) {
 
   try {
     await verifyAdmin();
-    const updatedProfile = await prisma.facultyProfile.update({
+    const updatedProfile = await prisma.facultyProfile.upsert({
       where: { userId: userId },
-      data: {
+      update: {
         employmentType: employmentType,
         maxUnitsPerSem: parseInt(maxUnitsPerSem, 10),
       },
+      create: {
+        userId: userId,
+        employmentType: employmentType,
+        maxUnitsPerSem: parseInt(maxUnitsPerSem, 10),
+      }
     });
 
     return { success: true, profile: updatedProfile };
