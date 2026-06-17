@@ -57,6 +57,7 @@ model Course {
   title         String
   units         Int
   description   String?
+  hasLab        Boolean   @default(false) @map("has_lab")
   createdAt     DateTime  @default(now()) @map("created_at")
 
   // Relationships
